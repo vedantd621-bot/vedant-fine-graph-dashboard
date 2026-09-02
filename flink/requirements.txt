@@ -1,0 +1,6 @@
+apache-flink>=1.18.0; sys_platform != "win32"
+pydantic>=2.6.0
+neo4j>=5.18.0
+kafka-python>=2.0.2
+python-dotenv>=1.0.0
+pytest>=8.0.0
