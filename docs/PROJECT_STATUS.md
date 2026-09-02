@@ -4,7 +4,7 @@
 |---|---|---|---|---|
 | **Phase 1** | **Foundation & Architecture Setup** | 🟢 **Completed** | Structure Verified | Validated |
 | **Phase 2** | **Synthetic Transaction Simulator** | 🟢 **Completed** | 15 Unit Tests Passed | Validated |
-| **Phase 3** | **Kafka Streaming Integration** | ⚪ Planned | Pending | Pending |
+| **Phase 3** | **Kafka Streaming Integration** | 🟢 **Completed** | 25 Tests Passed | Validated |
 | **Phase 4** | **Neo4j Schema, Constraints & Seeds** | ⚪ Planned | Pending | Pending |
 | **Phase 5** | **Apache Flink Stream Pipeline** | ⚪ Planned | Pending | Pending |
 | **Phase 6** | **Cypher Fraud Detection Library** | ⚪ Planned | Pending | Pending |
@@ -22,6 +22,11 @@
 - **Phase 1**: Scaffold, `docker-compose.yml`, environment configurations, documentation suite.
 - **Phase 2**:
   - `simulator/src/models.py`: Pydantic V2 schema models for `TransactionEvent`, `Account`, `Person`, `Bank`, and Enums.
-  - `simulator/src/generator.py`: Graph-aware deterministic synthetic generator for normal retail/commercial traffic and 5 distinct fraud syndicate topologies (Smurfing Funnel, 1-to-Many Distribution, Intermediary Chain, Circular Loops, Layered Network).
+  - `simulator/src/generator.py`: Graph-aware deterministic synthetic generator for normal retail/commercial traffic and 5 distinct fraud syndicate topologies.
   - `simulator/src/simulator.py`: Feature-complete CLI supporting rate controls, durations, file exports, and scenario isolation.
-  - `simulator/tests/`: 15 comprehensive unit tests covering models, negative amounts, empty values, timezone awareness, and topological constraints.
+- **Phase 3**:
+  - `simulator/src/config.py`: Environment-based Kafka client configuration (`KAFKA_BOOTSTRAP_SERVERS`, `KAFKA_TOPIC`, `KAFKA_CLIENT_ID`, `KAFKA_ACKS`, `KAFKA_RETRIES`, `KAFKA_RETRY_BACKOFF_MS`).
+  - `simulator/src/kafka_producer.py`: High-reliability `KafkaTransactionProducer` with keying by `transaction_id`, delivery confirmations, exponential backoff retries, and graceful flush/close on shutdown.
+  - `simulator/src/sinks.py`: Decoupled `BaseOutputSink` architecture (`StdoutSink`, `FileSink`, `KafkaSink`).
+  - `simulator/src/consumer.py`: CLI debug consumer subscribing to `transactions`, validating incoming records against Pydantic schema, and tolerating malformed records safely.
+  - `simulator/tests/test_kafka_producer.py` & `tests/integration/test_simulator_kafka.py`: 25 unit and integration tests passing.

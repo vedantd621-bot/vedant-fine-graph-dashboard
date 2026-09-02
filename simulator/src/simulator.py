@@ -2,27 +2,30 @@
 """
 FinGraph Simulator CLI.
 Executes continuous synthetic transaction stream generation with configurable
-throughput, account populations, scenario injection, and output formats.
+throughput, account populations, scenario injection, and decoupled output sinks (stdout, file, Kafka).
 """
 import argparse
-import json
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-# Ensure project root is in python path
+# Ensure project root in python path
 root_dir = Path(__file__).resolve().parent.parent.parent
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
 try:
+    from simulator.src.config import get_kafka_config
     from simulator.src.generator import FinGraphGenerator
     from simulator.src.models import ScenarioID
+    from simulator.src.sinks import create_output_sink
 except ImportError:
+    from config import get_kafka_config
     from generator import FinGraphGenerator
     from models import ScenarioID
+    from sinks import create_output_sink
 
 
 def parse_args() -> argparse.Namespace:
@@ -74,7 +77,7 @@ def parse_args() -> argparse.Namespace:
         "--output",
         type=str,
         default="stdout",
-        help="Output destination: stdout | file:<filepath>",
+        help="Output destination: stdout | file:<filepath> | kafka",
     )
     parser.add_argument(
         "--seed", type=int, default=42, help="Deterministic random seed"
@@ -97,7 +100,7 @@ def run_simulator():
     print(f"  Mode / Scenario:   {args.scenario}")
     print(f"  Duration:          {'Infinite' if args.duration == 0 else f'{args.duration}s'}")
     print(f"  Random Seed:       {args.seed}")
-    print(f"  Output:            {args.output}")
+    print(f"  Output Sink:       {args.output}")
     print("=" * 70)
 
     gen = FinGraphGenerator(
@@ -107,13 +110,11 @@ def run_simulator():
         seed=args.seed,
     )
 
-    file_handle = None
-    if args.output.startswith("file:"):
-        filepath = args.output.split("file:", 1)[1]
-        out_p = Path(filepath)
-        out_p.parent.mkdir(parents=True, exist_ok=True)
-        file_handle = open(out_p, "a", encoding="utf-8")
-        print(f"[*] Appending events to file: {filepath}")
+    try:
+        sink = create_output_sink(args.output, quiet=args.quiet)
+    except Exception as exc:
+        print(f"\n[FATAL] Failed to initialize output sink '{args.output}': {exc}", file=sys.stderr)
+        sys.exit(1)
 
     total_emitted = 0
     scenario_counts = {}
@@ -144,16 +145,7 @@ def run_simulator():
                 events.extend(gen.generate_layered_network_scenario())
 
             for ev in events:
-                raw_json = ev.model_dump_json()
-                if file_handle:
-                    file_handle.write(raw_json + "\n")
-                    file_handle.flush()
-                if not args.quiet:
-                    print(
-                        f"[{ev.timestamp.strftime('%H:%M:%S')}] {ev.transaction_id} | "
-                        f"{ev.from_account} -> {ev.to_account} | "
-                        f"${ev.amount:>9.2f} {ev.currency.value} | {ev.transaction_type.value:<12} | {ev.scenario_id}"
-                    )
+                sink.write(ev)
                 total_emitted += 1
                 scenario_counts[ev.scenario_id] = scenario_counts.get(ev.scenario_id, 0) + 1
 
@@ -169,16 +161,7 @@ def run_simulator():
                     suspicious_rate=args.suspicious_rate, batch_size=1
                 )
                 for ev in batch:
-                    raw_json = ev.model_dump_json()
-                    if file_handle:
-                        file_handle.write(raw_json + "\n")
-                        file_handle.flush()
-                    if not args.quiet:
-                        print(
-                            f"[{ev.timestamp.strftime('%H:%M:%S')}] {ev.transaction_id} | "
-                            f"{ev.from_account} -> {ev.to_account} | "
-                            f"${ev.amount:>9.2f} {ev.currency.value} | {ev.transaction_type.value:<12} | {ev.scenario_id}"
-                        )
+                    sink.write(ev)
                     total_emitted += 1
                     scenario_counts[ev.scenario_id] = (
                         scenario_counts.get(ev.scenario_id, 0) + 1
@@ -194,8 +177,8 @@ def run_simulator():
     except KeyboardInterrupt:
         print("\n[*] Generator interrupted by user.")
     finally:
-        if file_handle:
-            file_handle.close()
+        sink.flush()
+        sink.close()
 
     elapsed = max(0.001, time.time() - start_time)
     actual_tps = total_emitted / elapsed
