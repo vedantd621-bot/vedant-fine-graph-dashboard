@@ -6,8 +6,8 @@
 | **Phase 2** | **Synthetic Transaction Simulator** | 🟢 **Completed** | 15 Unit Tests Passed | Validated |
 | **Phase 3** | **Kafka Streaming Integration** | 🟢 **Completed** | 25 Tests Passed | Validated |
 | **Phase 4** | **Neo4j Schema, Constraints & Seeds** | 🟢 **Completed** | 43 Tests Passed | Validated |
-| **Phase 5** | **Apache Flink Stream Pipeline** | 🟢 **Completed** | 56 Tests Passed | Validated |
-| **Phase 6** | **Cypher Fraud Detection Library** | ⚪ Planned | Pending | Pending |
+| **Phase 5** | **Apache Flink Stream Pipeline** | 🟢 **Completed** | 60 Tests Passed | Validated |
+| **Phase 6** | **Cypher Fraud Detection Library** | 🟢 **Completed** | 76 Tests Passed | Validated |
 | **Phase 7** | **Neo4j Graph Data Science (GDS)** | ⚪ Planned | Pending | Pending |
 | **Phase 8** | **Explainable Risk Scoring Engine** | ⚪ Planned | Pending | Pending |
 | **Phase 9** | **FastAPI Backend REST Services** | ⚪ Planned | Pending | Pending |
@@ -33,13 +33,13 @@
   - `neo4j/src/config.py` & `neo4j/src/client.py`: Pooled `Neo4jClient` driver with connection reuse, parameterized executions, transaction management, and script parsing.
   - `neo4j/constraints/schema.cypher` & `neo4j/indexes/indexes.cypher`: Uniqueness constraints for `Person`, `Account`, `Bank` and performance indexes for `risk_score`, `community_id`, `timestamp`, `scenario_id`, `transaction_id`.
   - `neo4j/scripts/init_schema.py` & `neo4j/scripts/seed.py`: CLI schema initializer and graph seeder (4 Banks, 25 People, 30 Accounts, 29 Transactions).
-  - `neo4j/src/queries.py`: Cypher fraud detection queries.
+  - `neo4j/src/queries.py`: Cypher query library.
 - **Phase 5**:
-  - `flink/src/config.py` & `flink/src/schemas.py`: Canonical transaction schemas and `DLQEvent` models.
-  - `flink/src/transforms.py`: Decoding, schema validation, timestamp normalization, and dead-letter routing.
-  - `flink/src/neo4j_sink.py`: Parameterized micro-batched Neo4j Cypher sink with idempotency (`UNWIND MERGE`).
-  - `flink/src/dlq_sink.py`: Kafka Dead-Letter Queue sink for `transactions_dlq`.
-  - `flink/src/metrics.py`: Observability and real-time metric counters.
-  - `flink/src/job.py`: Streaming pipeline runner CLI.
-  - `flink/Dockerfile`: Container setup with Flink 1.18, Kafka connector jar, Python 3.
-  - `tests/flink/` & `tests/integration/test_pipeline_e2e.py`: Test suite covering schemas, transformations, sinks, DLQ routing, deduplication, and simulator-to-graph pipeline.
+  - `flink/src/config.py`, `schemas.py`, `transforms.py`, `neo4j_sink.py`, `dlq_sink.py`, `metrics.py`, `job.py`, `Dockerfile`.
+  - Real streaming pipeline with schema validation, UTC normalization, DLQ routing, and micro-batched idempotent graph writes.
+- **Phase 6**:
+  - `detection/src/models.py`: `DetectionResult`, `Alert`, `DetectionEvidence`, and `generate_fingerprint` deterministic deduplication.
+  - `detection/src/detectors/`: 7 modular detectors (`FunnelDetector`, `OneToManyDetector`, `ChainDetector`, `CircularFlowDetector` with rotational deduplication, `LayeredNetworkDetector`, `HighDegreeDetector`, `MoneyTrailInvestigator`).
+  - `detection/src/engine.py` & `cli.py`: DetectionEngine orchestrator and CLI supporting `--all`, individual detectors, threshold overrides, and text/JSON reports.
+  - `neo4j/cypher/detection/`: Production Cypher query library.
+  - `tests/detection/`: Comprehensive unit, threshold boundary, negative, temporal window, and alert deduplication tests.
