@@ -8,10 +8,10 @@
 | **Phase 4** | **Neo4j Schema, Constraints & Seeds** | 🟢 **Completed** | 43 Tests Passed | Validated |
 | **Phase 5** | **Apache Flink Stream Pipeline** | 🟢 **Completed** | 60 Tests Passed | Validated |
 | **Phase 6** | **Cypher Fraud Detection Library** | 🟢 **Completed** | 76 Tests Passed | Validated |
-| **Phase 7** | **Neo4j Graph Data Science (GDS)** | ⚪ Planned | Pending | Pending |
-| **Phase 8** | **Explainable Risk Scoring Engine** | ⚪ Planned | Pending | Pending |
-| **Phase 9** | **FastAPI Backend REST Services** | ⚪ Planned | Pending | Pending |
-| **Phase 10** | **Alerting & Deduplication Engine** | ⚪ Planned | Pending | Pending |
+| **Phase 7** | **Neo4j Graph Data Science (GDS)** | 🟢 **Completed** | 90 Tests Passed | Validated |
+| **Phase 8** | **FastAPI Backend REST Services** | ⚪ Planned | Pending | Pending |
+| **Phase 9** | **Alerting & Deduplication Engine** | ⚪ Planned | Pending | Pending |
+| **Phase 10** | **Investigation API & Case Management** | ⚪ Planned | Pending | Pending |
 | **Phase 11** | **React + D3 Investigation Dashboard** | ⚪ Planned | Pending | Pending |
 | **Phase 12** | **Performance & E2E Verification** | ⚪ Planned | Pending | Pending |
 | **Phase 13** | **Documentation & Final Polish** | ⚪ Planned | Pending | Pending |
@@ -40,6 +40,12 @@
 - **Phase 6**:
   - `detection/src/models.py`: `DetectionResult`, `Alert`, `DetectionEvidence`, and `generate_fingerprint` deterministic deduplication.
   - `detection/src/detectors/`: 7 modular detectors (`FunnelDetector`, `OneToManyDetector`, `ChainDetector`, `CircularFlowDetector` with rotational deduplication, `LayeredNetworkDetector`, `HighDegreeDetector`, `MoneyTrailInvestigator`).
-  - `detection/src/engine.py` & `cli.py`: DetectionEngine orchestrator and CLI supporting `--all`, individual detectors, threshold overrides, and text/JSON reports.
+  - `detection/src/engine.py` & `cli.py`: DetectionEngine orchestrator and CLI.
   - `neo4j/cypher/detection/`: Production Cypher query library.
-  - `tests/detection/`: Comprehensive unit, threshold boundary, negative, temporal window, and alert deduplication tests.
+- **Phase 7**:
+  - `analytics/src/models.py`: `GraphFeatures`, `RuleSignals`, `RiskScore`, `RiskAssessment`, `RiskLevel`.
+  - `analytics/src/gds_manager.py`: In-memory graph projection (`fingraph`) and GDS algorithms (PageRank, WCC, Louvain) with graceful topological fallbacks.
+  - `analytics/src/risk_engine.py`: Explainable composite risk engine ($60\%$ rule $+ 40\%$ graph) with audit justifications and batch persistence.
+  - `analytics/src/cli.py`: Analytics CLI supporting `--all`, `--account`, `--run-gds`, `--calculate-risk`, `--persist`, and JSON output.
+  - `neo4j/cypher/gds/`: Reusable GDS Cypher scripts.
+  - `tests/analytics/`: Complete test suite covering models, GDS lifecycle, risk engine, thresholds, explanations, missing data, and persistence.
