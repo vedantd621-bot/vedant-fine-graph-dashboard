@@ -1,8 +1,9 @@
 """
 FinGraph FastAPI Main Application.
-Provides RESTful APIs for real-time fraud syndicate detection, GDS analytics,
-account dossiers, interactive network visualization, and forensic case management.
+Provides RESTful APIs and real-time WebSockets for live fraud syndicate detection,
+GDS analytics, account dossiers, interactive network visualization, and forensic case management.
 """
+import asyncio
 import logging
 import sys
 import time
@@ -20,12 +21,15 @@ if str(root_dir) not in sys.path:
 from backend.app.config import get_api_config
 from backend.app.dependencies import get_neo4j_client
 from backend.app.models.common import ApiErrorDetail, ApiErrorResponse
+from backend.app.realtime.connection_manager import get_connection_manager
+from backend.app.realtime.kafka_consumer import get_realtime_kafka_consumer
 from backend.app.routes.health import router as health_router
 from backend.app.routes.alerts import router as alerts_router
 from backend.app.routes.accounts import router as accounts_router
 from backend.app.routes.graph import router as graph_router
 from backend.app.routes.dashboard import router as dashboard_router
 from backend.app.routes.investigation import router as investigation_router
+from backend.app.routes.websocket import router as websocket_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,9 +53,22 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning(f"Neo4j startup check note: {exc}")
 
+    # Start Realtime Connection Manager & Kafka Consumer
+    conn_mgr = get_connection_manager()
+    await conn_mgr.start()
+
+    kafka_consumer = get_realtime_kafka_consumer()
+    try:
+        loop = asyncio.get_running_loop()
+        kafka_consumer.start(loop=loop)
+    except Exception as exc:
+        logger.warning(f"Kafka consumer startup note: {exc}")
+
     yield
 
     logger.info("Shutting down FinGraph API...")
+    kafka_consumer.stop()
+    await conn_mgr.stop()
     if client:
         client.close()
 
@@ -59,7 +76,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=config.app_name,
     version=config.app_version,
-    description="Real-Time Fraud Syndicate Analytics & Graph Investigation REST API",
+    description="Real-Time Fraud Syndicate Analytics & Graph Investigation REST/WebSocket API",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
@@ -120,6 +137,7 @@ app.include_router(accounts_router)
 app.include_router(graph_router)
 app.include_router(dashboard_router)
 app.include_router(investigation_router)
+app.include_router(websocket_router)
 
 
 if __name__ == "__main__":

@@ -2,16 +2,16 @@ import React, { useEffect, useState } from 'react';
 import {
   ShieldAlert,
   Users,
-  Activity,
   DollarSign,
   AlertTriangle,
   ArrowRight,
-  TrendingUp,
 } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { AccountSummary, AlertSummary, DashboardSummary, RiskDistribution } from '../types';
 import { KpiCard } from '../components/cards/KpiCard';
 import { RiskDistributionChart } from '../components/charts/RiskDistributionChart';
+import { realtimeClient } from '../realtime/websocket';
+import { AlertCreatedData, RiskUpdatedData, TransactionCreatedData } from '../types/realtime';
 
 interface DashboardPageProps {
   onSelectAccount: (accountId: string) => void;
@@ -52,6 +52,71 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       }
     };
     fetchData();
+  }, []);
+
+  // Real-Time Event Handlers
+  useEffect(() => {
+    const unsubAlertCreated = realtimeClient.on('alert.created', (evt) => {
+      const data: AlertCreatedData = evt.data;
+      setSummary((prev) =>
+        prev
+          ? {
+              ...prev,
+              open_alerts: prev.open_alerts + 1,
+            }
+          : prev
+      );
+
+      const newAlertSummary: AlertSummary = {
+        alert_id: data.alert_id,
+        detection_type: data.detection_type,
+        severity: data.severity,
+        confidence: data.confidence,
+        primary_account: data.primary_account,
+        risk_score: data.risk_score,
+        risk_level: data.risk_level,
+        created_at: evt.timestamp,
+        status: data.status || 'OPEN',
+        description: data.description,
+        total_amount: data.total_amount,
+        currency: data.currency || 'USD',
+      };
+      setRecentAlerts((prev) => [newAlertSummary, ...prev.slice(0, 4)]);
+    });
+
+    const unsubTxCreated = realtimeClient.on('transaction.created', (evt) => {
+      const data: TransactionCreatedData = evt.data;
+      setSummary((prev) =>
+        prev
+          ? {
+              ...prev,
+              total_transactions: prev.total_transactions + 1,
+              total_transaction_volume: prev.total_transaction_volume + (data.amount || 0),
+            }
+          : prev
+      );
+    });
+
+    const unsubRiskUpdated = realtimeClient.on('risk.updated', (evt) => {
+      const data: RiskUpdatedData = evt.data;
+      setTopAccounts((prev) =>
+        prev.map((acc) =>
+          acc.account_id === data.account_id
+            ? {
+                ...acc,
+                risk_score: data.score,
+                risk_level: data.risk_level,
+              }
+            : acc
+        )
+      );
+    });
+
+    return () => {
+      unsubAlertCreated();
+      unsubTxCreated();
+      unsubRiskUpdated();
+    };
   }, []);
 
   if (loading) {

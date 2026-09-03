@@ -13,6 +13,8 @@ import {
 import { apiClient } from '../api/client';
 import { AccountDetail, AccountTransactionItem, GraphPayload } from '../types';
 import { InteractiveGraph } from '../components/graph/InteractiveGraph';
+import { realtimeClient } from '../realtime/websocket';
+import { GraphUpdatedData, RiskUpdatedData, TransactionCreatedData } from '../types/realtime';
 
 interface AccountDetailPageProps {
   accountId: string;
@@ -53,6 +55,63 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
 
   useEffect(() => {
     fetchAccountData();
+    realtimeClient.watchAccount(accountId);
+  }, [accountId, graphDepth]);
+
+  useEffect(() => {
+    const unsubRisk = realtimeClient.on('risk.updated', (evt) => {
+      const data: RiskUpdatedData = evt.data;
+      if (data.account_id === accountId) {
+        setAccount((prev) =>
+          prev
+            ? {
+                ...prev,
+                risk_score: data.score,
+                risk_level: data.risk_level,
+                risk_reasons: data.reasons?.length ? data.reasons : prev.risk_reasons,
+                calculated_at: data.calculated_at,
+              }
+            : prev
+        );
+      }
+    });
+
+    const unsubGraph = realtimeClient.on('graph.updated', async (evt) => {
+      const data: GraphUpdatedData = evt.data;
+      if (data.account_id === accountId || data.related_account_id === accountId) {
+        try {
+          const updatedGraph = await apiClient.getAccountGraph(accountId, graphDepth);
+          setGraphData(updatedGraph);
+        } catch (e) {
+          console.debug('Failed to live-refresh graph:', e);
+        }
+      }
+    });
+
+    const unsubTx = realtimeClient.on('transaction.created', (evt) => {
+      const data: TransactionCreatedData = evt.data;
+      if (data.source_account === accountId || data.destination_account === accountId) {
+        const isIncoming = data.destination_account === accountId;
+        const newTxItem: AccountTransactionItem = {
+          transaction_id: data.transaction_id,
+          direction: isIncoming ? 'INCOMING' : 'OUTGOING',
+          counterparty: isIncoming ? data.source_account : data.destination_account,
+          amount: data.amount,
+          currency: data.currency || 'USD',
+          timestamp: data.timestamp,
+          transaction_type: 'transfer',
+          scenario_id: data.scenario_id,
+          channel: data.channel,
+        };
+        setTransactions((prev) => [newTxItem, ...prev]);
+      }
+    });
+
+    return () => {
+      unsubRisk();
+      unsubGraph();
+      unsubTx();
+    };
   }, [accountId, graphDepth]);
 
   const handleToggleFreeze = async () => {
@@ -92,7 +151,6 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header & Freeze Action */}
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
@@ -115,7 +173,6 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
         </button>
       </div>
 
-      {/* Account Profile Dossier Card */}
       <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -157,7 +214,6 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
           </div>
         </div>
 
-        {/* GDS Graph Metrics & Subscores Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
           <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
             <span className="text-slate-400">PageRank Centrality</span>
@@ -183,7 +239,6 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
           </div>
         </div>
 
-        {/* Explainable Reasons */}
         <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
           <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
             Why is this account flagged with elevated risk?
@@ -199,7 +254,6 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
         </div>
       </div>
 
-      {/* Subgraph Neighborhood */}
       {graphData && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -231,7 +285,6 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
         </div>
       )}
 
-      {/* Transaction History Timeline */}
       <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-3">
         <h3 className="text-sm font-bold tracking-tight text-slate-200">
           Settled Transaction Timeline ({transactions.length})

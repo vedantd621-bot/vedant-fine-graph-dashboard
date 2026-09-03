@@ -1,7 +1,9 @@
 """
 FinGraph Alert Business Service.
 Manages alert generation, filtering, forensic detail retrieval, and investigation lifecycle transitions.
+Emits real-time alert updates to the EventBus.
 """
+import asyncio
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
@@ -11,6 +13,13 @@ from detection.src.models import Alert, AlertStatus, DetectionType, Severity
 from analytics.src.models import RiskLevel
 from analytics.src.risk_engine import ExplainableRiskEngine
 from backend.app.models.alerts import AlertDetail, AlertSummary
+from backend.app.realtime.event_bus import EventBus, get_event_bus
+from backend.app.realtime.events import (
+    AlertCreatedPayload,
+    AlertUpdatedPayload,
+    EventType,
+    create_realtime_event,
+)
 
 # In-memory alert status override store to preserve analyst status updates across runs
 _alert_status_store: Dict[str, Tuple[AlertStatus, datetime]] = {}
@@ -24,10 +33,12 @@ class AlertService:
         client: Neo4jClient,
         detection_engine: DetectionEngine,
         risk_engine: ExplainableRiskEngine,
+        event_bus: Optional[EventBus] = None,
     ):
         self.client = client
         self.detection_engine = detection_engine
         self.risk_engine = risk_engine
+        self.event_bus = event_bus or get_event_bus()
 
     def list_alerts(
         self,
@@ -153,12 +164,30 @@ class AlertService:
         )
 
     def update_alert_status(self, alert_id: str, new_status: AlertStatus) -> Optional[AlertDetail]:
-        """Updates the investigative lifecycle status for an alert."""
+        """Updates the investigative lifecycle status for an alert and emits real-time event."""
         detail = self.get_alert_by_id(alert_id)
         if not detail:
             return None
 
+        prev_status = detail.status
         now = datetime.now(timezone.utc)
         _alert_status_store[alert_id] = (new_status, now)
 
-        return self.get_alert_by_id(alert_id)
+        updated_detail = self.get_alert_by_id(alert_id)
+
+        # Emit alert.updated event
+        payload = AlertUpdatedPayload(
+            alert_id=alert_id,
+            previous_status=prev_status,
+            status=new_status,
+            updated_at=now,
+        )
+        evt = create_realtime_event(EventType.ALERT_UPDATED, payload)
+
+        try:
+            loop = asyncio.get_running_loop()
+            asyncio.create_task(self.event_bus.publish(evt))
+        except RuntimeError:
+            pass  # Non-async execution context
+
+        return updated_detail

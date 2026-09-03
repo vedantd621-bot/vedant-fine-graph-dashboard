@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { Shield, Search, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Shield, Search, RefreshCw, Radio } from 'lucide-react';
+import { useRealtime } from '../../realtime/RealtimeContext';
+import { NotificationCenter } from '../realtime/NotificationCenter';
 
 interface NavbarProps {
   onSearch?: (query: string) => void;
   onRefresh?: () => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  onSelectAlert?: (alertId: string) => void;
+  onSelectAccount?: (accountId: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -13,8 +17,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onRefresh,
   activeTab,
   setActiveTab,
+  onSelectAlert,
+  onSelectAccount,
 }) => {
   const [searchInput, setSearchInput] = useState('');
+  const { status, lastEventTime } = useRealtime();
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +30,33 @@ export const Navbar: React.FC<NavbarProps> = ({
       setActiveTab('investigation');
     }
   };
+
+  const statusStyles = {
+    LIVE: {
+      bg: 'bg-emerald-500/10',
+      border: 'border-emerald-500/20',
+      text: 'text-emerald-400',
+      dot: 'bg-emerald-400',
+      animate: true,
+      label: '● LIVE STREAM',
+    },
+    CONNECTING: {
+      bg: 'bg-amber-500/10',
+      border: 'border-amber-500/20',
+      text: 'text-amber-400',
+      dot: 'bg-amber-400',
+      animate: true,
+      label: '● RECONNECTING...',
+    },
+    DISCONNECTED: {
+      bg: 'bg-slate-800',
+      border: 'border-slate-700',
+      text: 'text-slate-400',
+      dot: 'bg-slate-500',
+      animate: false,
+      label: '● OFFLINE',
+    },
+  }[status];
 
   return (
     <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between text-slate-100">
@@ -55,21 +89,34 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </form>
 
-      {/* Actions */}
+      {/* Realtime Status Indicator & Actions */}
       <div className="flex items-center gap-3">
+        {/* Real-time connection badge */}
+        <div
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold ${statusStyles.bg} ${statusStyles.border} ${statusStyles.text}`}
+          title={lastEventTime ? `Last stream event: ${lastEventTime.toLocaleTimeString()}` : 'Connected to WebSocket stream'}
+        >
+          <span
+            className={`h-2 w-2 rounded-full ${statusStyles.dot} ${statusStyles.animate ? 'animate-pulse' : ''}`}
+          ></span>
+          <span>{statusStyles.label}</span>
+        </div>
+
+        {/* Real-Time Notification Center */}
+        <NotificationCenter
+          onSelectAlert={onSelectAlert}
+          onSelectAccount={onSelectAccount}
+        />
+
         {onRefresh && (
           <button
             onClick={onRefresh}
             className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 transition-colors"
+            title="Refresh View"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-            Refresh
           </button>
         )}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          Streaming Active
-        </div>
       </div>
     </header>
   );

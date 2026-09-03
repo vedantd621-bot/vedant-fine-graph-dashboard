@@ -7,8 +7,10 @@ import { AlertDetailPage } from './pages/AlertDetailPage';
 import { AccountsPage } from './pages/AccountsPage';
 import { AccountDetailPage } from './pages/AccountDetailPage';
 import { InvestigationPage } from './pages/InvestigationPage';
+import { RealtimeProvider } from './realtime/RealtimeContext';
+import { AlertToast } from './components/realtime/AlertToast';
 
-export const App: React.FC = () => {
+export const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
@@ -31,12 +33,17 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
+      {/* Real-time Alert Toast Notification */}
+      <AlertToast onSelectAlert={handleSelectAlert} />
+
       {/* Top Navigation */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onSearch={handleSearch}
         onRefresh={() => window.location.reload()}
+        onSelectAlert={handleSelectAlert}
+        onSelectAccount={handleSelectAccount}
       />
 
       {/* Main Body Layout */}
@@ -89,6 +96,14 @@ export const App: React.FC = () => {
         </main>
       </div>
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <RealtimeProvider>
+      <AppContent />
+    </RealtimeProvider>
   );
 };
 

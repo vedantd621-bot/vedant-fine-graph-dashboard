@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { ShieldAlert, Filter, Search, ArrowRight, CheckCircle2, Clock } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { AlertStatus, AlertSummary, DetectionType, Severity } from '../types';
+import { realtimeClient } from '../realtime/websocket';
+import { AlertCreatedData, AlertUpdatedData } from '../types/realtime';
 
 interface AlertsPageProps {
   onSelectAlert: (alertId: string) => void;
@@ -39,6 +41,44 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onSelectAlert }) => {
   useEffect(() => {
     fetchAlerts();
   }, [severityFilter, statusFilter, page]);
+
+  // Real-Time Event Handlers
+  useEffect(() => {
+    const unsubAlertCreated = realtimeClient.on('alert.created', (evt) => {
+      const data: AlertCreatedData = evt.data;
+      const newAlert: AlertSummary = {
+        alert_id: data.alert_id,
+        detection_type: data.detection_type,
+        severity: data.severity,
+        confidence: data.confidence,
+        primary_account: data.primary_account,
+        risk_score: data.risk_score,
+        risk_level: data.risk_level,
+        created_at: evt.timestamp,
+        status: data.status || 'OPEN',
+        description: data.description,
+        total_amount: data.total_amount,
+        currency: data.currency || 'USD',
+      };
+      setAlerts((prev) => [newAlert, ...prev]);
+    });
+
+    const unsubAlertUpdated = realtimeClient.on('alert.updated', (evt) => {
+      const data: AlertUpdatedData = evt.data;
+      setAlerts((prev) =>
+        prev.map((alt) =>
+          alt.alert_id === data.alert_id
+            ? { ...alt, status: data.status }
+            : alt
+        )
+      );
+    });
+
+    return () => {
+      unsubAlertCreated();
+      unsubAlertUpdated();
+    };
+  }, []);
 
   const filteredAlerts = alerts.filter(
     (a) =>

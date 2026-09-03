@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { ShieldAlert, Filter, Search, ArrowRight, CheckCircle2, Clock } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { AlertStatus, AlertSummary, DetectionType, Severity } from '../types';
+import { realtimeClient } from '../realtime/websocket';
+import { AlertCreatedData, AlertUpdatedData } from '../types/realtime';
 
 interface AlertsPageProps {
   onSelectAlert: (alertId: string) => void;
@@ -40,6 +42,43 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onSelectAlert }) => {
     fetchAlerts();
   }, [severityFilter, statusFilter, page]);
 
+  useEffect(() => {
+    const unsubAlertCreated = realtimeClient.on('alert.created', (evt) => {
+      const data: AlertCreatedData = evt.data;
+      const newAlert: AlertSummary = {
+        alert_id: data.alert_id,
+        detection_type: data.detection_type,
+        severity: data.severity,
+        confidence: data.confidence,
+        primary_account: data.primary_account,
+        risk_score: data.risk_score,
+        risk_level: data.risk_level,
+        created_at: evt.timestamp,
+        status: data.status || 'OPEN',
+        description: data.description,
+        total_amount: data.total_amount,
+        currency: data.currency || 'USD',
+      };
+      setAlerts((prev) => [newAlert, ...prev]);
+    });
+
+    const unsubAlertUpdated = realtimeClient.on('alert.updated', (evt) => {
+      const data: AlertUpdatedData = evt.data;
+      setAlerts((prev) =>
+        prev.map((alt) =>
+          alt.alert_id === data.alert_id
+            ? { ...alt, status: data.status }
+            : alt
+        )
+      );
+    });
+
+    return () => {
+      unsubAlertCreated();
+      unsubAlertUpdated();
+    };
+  }, []);
+
   const filteredAlerts = alerts.filter(
     (a) =>
       !searchQuery ||
@@ -59,7 +98,6 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onSelectAlert }) => {
         </div>
       </div>
 
-      {/* Filters & Search Bar */}
       <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-slate-900 border border-slate-800">
         <div className="flex-1 min-w-[200px] relative">
           <Search className="h-4 w-4 absolute left-3 top-2.5 text-slate-400" />
@@ -72,7 +110,6 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onSelectAlert }) => {
           />
         </div>
 
-        {/* Severity Filter */}
         <select
           value={severityFilter}
           onChange={(e) => {
@@ -88,7 +125,6 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onSelectAlert }) => {
           <option value="LOW">Low</option>
         </select>
 
-        {/* Status Filter */}
         <select
           value={statusFilter}
           onChange={(e) => {
@@ -105,7 +141,6 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onSelectAlert }) => {
         </select>
       </div>
 
-      {/* Alerts Table */}
       <div className="rounded-xl bg-slate-900 border border-slate-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">

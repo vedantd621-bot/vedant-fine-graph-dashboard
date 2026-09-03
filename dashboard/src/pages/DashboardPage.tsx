@@ -2,16 +2,16 @@ import React, { useEffect, useState } from 'react';
 import {
   ShieldAlert,
   Users,
-  Activity,
   DollarSign,
   AlertTriangle,
   ArrowRight,
-  TrendingUp,
 } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { AccountSummary, AlertSummary, DashboardSummary, RiskDistribution } from '../types';
 import { KpiCard } from '../components/cards/KpiCard';
 import { RiskDistributionChart } from '../components/charts/RiskDistributionChart';
+import { realtimeClient } from '../realtime/websocket';
+import { AlertCreatedData, RiskUpdatedData, TransactionCreatedData } from '../types/realtime';
 
 interface DashboardPageProps {
   onSelectAccount: (accountId: string) => void;
@@ -54,6 +54,70 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const unsubAlertCreated = realtimeClient.on('alert.created', (evt) => {
+      const data: AlertCreatedData = evt.data;
+      setSummary((prev) =>
+        prev
+          ? {
+              ...prev,
+              open_alerts: prev.open_alerts + 1,
+            }
+          : prev
+      );
+
+      const newAlertSummary: AlertSummary = {
+        alert_id: data.alert_id,
+        detection_type: data.detection_type,
+        severity: data.severity,
+        confidence: data.confidence,
+        primary_account: data.primary_account,
+        risk_score: data.risk_score,
+        risk_level: data.risk_level,
+        created_at: evt.timestamp,
+        status: data.status || 'OPEN',
+        description: data.description,
+        total_amount: data.total_amount,
+        currency: data.currency || 'USD',
+      };
+      setRecentAlerts((prev) => [newAlertSummary, ...prev.slice(0, 4)]);
+    });
+
+    const unsubTxCreated = realtimeClient.on('transaction.created', (evt) => {
+      const data: TransactionCreatedData = evt.data;
+      setSummary((prev) =>
+        prev
+          ? {
+              ...prev,
+              total_transactions: prev.total_transactions + 1,
+              total_transaction_volume: prev.total_transaction_volume + (data.amount || 0),
+            }
+          : prev
+      );
+    });
+
+    const unsubRiskUpdated = realtimeClient.on('risk.updated', (evt) => {
+      const data: RiskUpdatedData = evt.data;
+      setTopAccounts((prev) =>
+        prev.map((acc) =>
+          acc.account_id === data.account_id
+            ? {
+                ...acc,
+                risk_score: data.score,
+                risk_level: data.risk_level,
+              }
+            : acc
+        )
+      );
+    });
+
+    return () => {
+      unsubAlertCreated();
+      unsubTxCreated();
+      unsubRiskUpdated();
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-400">
@@ -79,7 +143,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-100">
@@ -91,7 +154,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Open Fraud Alerts"
@@ -123,13 +185,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         />
       </div>
 
-      {/* Risk Distribution & Top Risk Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
           <RiskDistributionChart distribution={riskDist} />
         </div>
 
-        {/* Top Risk Candidates Table */}
         <div className="lg:col-span-2 p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold tracking-tight text-slate-200">
@@ -194,7 +254,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </div>
 
-      {/* Recent Alerts Feed */}
       <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

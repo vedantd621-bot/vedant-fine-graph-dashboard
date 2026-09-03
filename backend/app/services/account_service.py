@@ -262,7 +262,7 @@ class AccountService:
         return paginated, total_items
 
     def freeze_account(self, account_id: str, freeze: bool, reason: Optional[str] = None) -> AccountFreezeResponse:
-        """Sets simulated freeze containment on an account."""
+        """Sets simulated freeze containment on an account and emits real-time update."""
         now = datetime.now(timezone.utc)
         _account_freeze_store[account_id] = (freeze, now if freeze else None)
 
@@ -270,6 +270,25 @@ class AccountService:
         msg = f"Account {account_id} has been {action.lower()}."
         if reason and freeze:
             msg += f" Reason: {reason}"
+
+        # Emit graph.updated event
+        from backend.app.realtime.event_bus import get_event_bus
+        from backend.app.realtime.events import EventType, GraphUpdatedPayload, create_realtime_event
+        bus = get_event_bus()
+        g_evt = create_realtime_event(
+            EventType.GRAPH_UPDATED,
+            GraphUpdatedPayload(
+                account_id=account_id,
+                change_type="ACCOUNT_FROZEN" if freeze else "ACCOUNT_UNFROZEN",
+                timestamp=now,
+            ),
+        )
+        try:
+            import asyncio
+            loop = asyncio.get_running_loop()
+            asyncio.create_task(bus.publish(g_evt))
+        except RuntimeError:
+            pass
 
         return AccountFreezeResponse(
             account_id=account_id,

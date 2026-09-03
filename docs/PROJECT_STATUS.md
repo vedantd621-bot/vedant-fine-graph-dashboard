@@ -10,7 +10,7 @@
 | **Phase 6** | **Cypher Fraud Detection Library** | 🟢 **Completed** | 76 Tests Passed | Validated |
 | **Phase 7** | **Neo4j Graph Data Science (GDS)** | 🟢 **Completed** | 93 Tests Passed | Validated |
 | **Phase 8** | **Investigation API + React Dashboard** | 🟢 **Completed** | 103 Tests Passed | Validated |
-| **Phase 9** | **Real-Time Alerting + Live Stream Updates** | ⚪ Planned | Pending | Pending |
+| **Phase 9** | **Real-Time Alerting + Live Stream Updates** | 🟢 **Completed** | 116 Tests Passed | Validated |
 | **Phase 10** | **Investigation Case Management & Notes** | ⚪ Planned | Pending | Pending |
 | **Phase 11** | **Advanced Multi-Cluster Visualizer** | ⚪ Planned | Pending | Pending |
 | **Phase 12** | **Performance & E2E Verification** | ⚪ Planned | Pending | Pending |
@@ -53,4 +53,11 @@
   - `backend/app/routes/`: Comprehensive endpoints for `/health`, `/health/neo4j`, `/api/v1/alerts`, `/api/v1/accounts`, `/api/v1/accounts/{id}/graph`, `/api/v1/investigation/money-trail`, `/api/v1/dashboard/summary`, and `/api/v1/accounts/{id}/freeze`.
   - `backend/app/services/`: Enterprise service layer integrating `DetectionEngine`, `GDSManager`, and `ExplainableRiskEngine`.
   - `dashboard/` & `frontend/`: React 18 + TypeScript + D3 force-directed investigation workstation with Executive Overview, Alert Dossiers, Account Histories, Subgraph Visualizer, and Money Trail Tracer.
-  - `tests/api/`: Comprehensive FastAPI endpoint tests passing 10/10 (103/103 tests passing repository-wide).
+- **Phase 9**:
+  - `backend/app/realtime/events.py`: Standardized versioned `RealtimeEvent[T]` envelope and schemas (`alert.created`, `alert.updated`, `risk.updated`, `transaction.created`, `graph.updated`).
+  - `backend/app/realtime/event_bus.py`: Async in-memory `EventBus` pub/sub engine with exception isolation and history ring buffer.
+  - `backend/app/realtime/connection_manager.py`: WebSocket manager handling concurrency limits, heartbeat pings, and subscription filters.
+  - `backend/app/realtime/kafka_consumer.py`: Background Kafka consumer for topic `transactions` dispatching live graph updates.
+  - `backend/app/routes/websocket.py`: `WS /api/v1/ws`, `WS /ws`, and `GET /health/realtime`.
+  - `frontend/src/realtime/` & `dashboard/src/realtime/`: WebSocket client with exponential backoff reconnect, `RealtimeProvider`, `AlertToast`, `NotificationCenter`, and reactive UI state bindings across all pages.
+  - `tests/realtime/`: 13 dedicated unit/integration tests (**116/116 tests passing repository-wide**).
