@@ -15,11 +15,30 @@ if str(root_dir) not in sys.path:
 
 try:
     from neo4j import GraphDatabase, Driver, Session, exceptions as neo4j_exceptions
-except ImportError:
+except (ImportError, AttributeError):
     GraphDatabase = None
     Driver = None
     Session = None
     neo4j_exceptions = None
+
+if GraphDatabase is None:
+    try:
+        import os, importlib.util
+        for _p in sys.path:
+            if "site-packages" in _p:
+                _init_p = os.path.join(_p, "neo4j", "__init__.py")
+                if os.path.isfile(_init_p) and os.path.abspath(_init_p) != os.path.abspath(__file__):
+                    _spec = importlib.util.spec_from_file_location("official_neo4j_driver", _init_p)
+                    if _spec and _spec.loader:
+                        _mod = importlib.util.module_from_spec(_spec)
+                        _spec.loader.exec_module(_mod)
+                        GraphDatabase = getattr(_mod, "GraphDatabase", None)
+                        Driver = getattr(_mod, "Driver", None)
+                        Session = getattr(_mod, "Session", None)
+                        neo4j_exceptions = getattr(_mod, "exceptions", None)
+                        break
+    except Exception:
+        pass
 
 try:
     from neo4j.src.config import Neo4jConfig, get_neo4j_config
