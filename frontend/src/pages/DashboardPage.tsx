@@ -1,0 +1,250 @@
+import React, { useEffect, useState } from 'react';
+import {
+  ShieldAlert,
+  Users,
+  Activity,
+  DollarSign,
+  AlertTriangle,
+  ArrowRight,
+  TrendingUp,
+} from 'lucide-react';
+import { apiClient } from '../api/client';
+import { AccountSummary, AlertSummary, DashboardSummary, RiskDistribution } from '../types';
+import { KpiCard } from '../components/cards/KpiCard';
+import { RiskDistributionChart } from '../components/charts/RiskDistributionChart';
+
+interface DashboardPageProps {
+  onSelectAccount: (accountId: string) => void;
+  onSelectAlert: (alertId: string) => void;
+  onNavigate: (tab: string) => void;
+}
+
+export const DashboardPage: React.FC<DashboardPageProps> = ({
+  onSelectAccount,
+  onSelectAlert,
+  onNavigate,
+}) => {
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [riskDist, setRiskDist] = useState<RiskDistribution | null>(null);
+  const [topAccounts, setTopAccounts] = useState<AccountSummary[]>([]);
+  const [recentAlerts, setRecentAlerts] = useState<AlertSummary[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [sumRes, distRes, topAccRes, alertRes] = await Promise.all([
+          apiClient.getDashboardSummary(),
+          apiClient.getRiskDistribution(),
+          apiClient.getTopRiskAccounts(6),
+          apiClient.listAlerts({ page: 1, page_size: 5, sort: 'created_at', order: 'desc' }),
+        ]);
+        setSummary(sumRes);
+        setRiskDist(distRes);
+        setTopAccounts(topAccRes);
+        setRecentAlerts(alertRes.data);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load dashboard intelligence.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        <div className="flex items-center gap-3">
+          <div className="h-5 w-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+          <span>Loading real-time graph intelligence...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !summary || !riskDist) {
+    return (
+      <div className="p-6 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300">
+        <div className="flex items-center gap-2 font-bold mb-1">
+          <AlertTriangle className="h-5 w-5" />
+          <span>Error Loading Dashboard</span>
+        </div>
+        <p className="text-sm">{error || 'Please ensure backend API is running on port 8000.'}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-100">
+            Executive Fraud & Syndicate Operations
+          </h1>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Real-time graph analytics, GDS community clustering, and explainable risk scores.
+          </p>
+        </div>
+      </div>
+
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          title="Open Fraud Alerts"
+          value={summary.open_alerts}
+          subtitle={`${summary.investigating_alerts} currently under investigation`}
+          icon={ShieldAlert}
+          colorScheme="rose"
+        />
+        <KpiCard
+          title="Critical / High Risk"
+          value={summary.critical_risk_accounts + summary.high_risk_accounts}
+          subtitle={`${summary.critical_risk_accounts} Critical · ${summary.high_risk_accounts} High`}
+          icon={AlertTriangle}
+          colorScheme="amber"
+        />
+        <KpiCard
+          title="Active Accounts"
+          value={summary.total_accounts}
+          subtitle="Monitored in Neo4j graph"
+          icon={Users}
+          colorScheme="cyan"
+        />
+        <KpiCard
+          title="Transacted Volume"
+          value={`$${(summary.total_transaction_volume / 1000).toFixed(1)}k`}
+          subtitle={`${summary.total_transactions} settled transfers`}
+          icon={DollarSign}
+          colorScheme="emerald"
+        />
+      </div>
+
+      {/* Risk Distribution & Top Risk Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <RiskDistributionChart distribution={riskDist} />
+        </div>
+
+        {/* Top Risk Candidates Table */}
+        <div className="lg:col-span-2 p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold tracking-tight text-slate-200">
+              High-Risk Account Investigation Candidates
+            </h3>
+            <button
+              onClick={() => onNavigate('accounts')}
+              className="text-xs text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-1"
+            >
+              View All <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="text-[11px] uppercase font-semibold text-slate-400 border-b border-slate-800">
+                <tr>
+                  <th className="pb-2.5">Account</th>
+                  <th className="pb-2.5">Risk Score</th>
+                  <th className="pb-2.5">Degree</th>
+                  <th className="pb-2.5">PageRank</th>
+                  <th className="pb-2.5">Community</th>
+                  <th className="pb-2.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {topAccounts.map((acc) => {
+                  const isCrit = acc.risk_level === 'CRITICAL';
+                  return (
+                    <tr key={acc.account_id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="py-2.5 font-bold text-slate-200">{acc.account_id}</td>
+                      <td className="py-2.5">
+                        <span
+                          className={`font-bold px-2 py-0.5 rounded text-[11px] ${
+                            isCrit
+                              ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                              : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          }`}
+                        >
+                          {acc.risk_score.toFixed(1)} ({acc.risk_level})
+                        </span>
+                      </td>
+                      <td className="py-2.5 text-slate-300">{acc.total_degree} links</td>
+                      <td className="py-2.5 text-slate-300">{acc.pagerank.toFixed(3)}</td>
+                      <td className="py-2.5 text-slate-400">
+                        {acc.louvain_community_id !== undefined ? `Group ${acc.louvain_community_id}` : '—'}
+                      </td>
+                      <td className="py-2.5 text-right">
+                        <button
+                          onClick={() => onSelectAccount(acc.account_id)}
+                          className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-400 font-semibold transition-colors"
+                        >
+                          Investigate
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Alerts Feed */}
+      <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-rose-400" />
+            <h3 className="text-sm font-bold tracking-tight text-slate-200">Recent Topological Fraud Alerts</h3>
+          </div>
+          <button
+            onClick={() => onNavigate('alerts')}
+            className="text-xs text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-1"
+          >
+            All Alerts ({summary.open_alerts}) <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <div className="divide-y divide-slate-800/60">
+          {recentAlerts.map((alt) => (
+            <div
+              key={alt.alert_id}
+              onClick={() => onSelectAlert(alt.alert_id)}
+              className="py-3 flex items-center justify-between hover:bg-slate-800/30 px-2 rounded-lg cursor-pointer transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
+                    alt.severity === 'CRITICAL'
+                      ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                      : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                  }`}
+                >
+                  {alt.detection_type}
+                </span>
+                <div>
+                  <div className="text-xs font-semibold text-slate-200">{alt.description}</div>
+                  <div className="text-[11px] text-slate-400">
+                    Target: <span className="text-slate-300 font-medium">{alt.primary_account}</span> · Confidence: {(alt.confidence * 100).toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-semibold text-cyan-400">
+                  {alt.total_amount ? `$${alt.total_amount.toLocaleString()} USD` : ''}
+                </span>
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                  {alt.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};

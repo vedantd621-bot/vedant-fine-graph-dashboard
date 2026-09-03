@@ -1,0 +1,299 @@
+import React, { useEffect, useState } from 'react';
+import {
+  ArrowLeft,
+  Snowflake,
+  ShieldAlert,
+  Users,
+  Building,
+  DollarSign,
+  Activity,
+  CheckCircle,
+  ExternalLink,
+} from 'lucide-react';
+import { apiClient } from '../api/client';
+import { AccountDetail, AccountTransactionItem, GraphPayload } from '../types';
+import { InteractiveGraph } from '../components/graph/InteractiveGraph';
+
+interface AccountDetailPageProps {
+  accountId: string;
+  onBack: () => void;
+  onSelectAccount: (accountId: string) => void;
+}
+
+export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
+  accountId,
+  onBack,
+  onSelectAccount,
+}) => {
+  const [account, setAccount] = useState<AccountDetail | null>(null);
+  const [transactions, setTransactions] = useState<AccountTransactionItem[]>([]);
+  const [graphData, setGraphData] = useState<GraphPayload | null>(null);
+  const [graphDepth, setGraphDepth] = useState<number>(2);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [freezing, setFreezing] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAccountData = async () => {
+    try {
+      setLoading(true);
+      const [accRes, txRes, gRes] = await Promise.all([
+        apiClient.getAccountDetail(accountId),
+        apiClient.getAccountTransactions(accountId, { page: 1, page_size: 20 }),
+        apiClient.getAccountGraph(accountId, graphDepth),
+      ]);
+      setAccount(accRes);
+      setTransactions(txRes.data);
+      setGraphData(gRes);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load account dossier.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAccountData();
+  }, [accountId, graphDepth]);
+
+  const handleToggleFreeze = async () => {
+    if (!account) return;
+    try {
+      setFreezing(true);
+      const res = await apiClient.freezeAccount(accountId, !account.is_frozen, 'Simulated freeze from investigation dashboard');
+      setAccount({ ...account, is_frozen: res.is_frozen });
+    } catch (err: any) {
+      alert(`Freeze action failed: ${err.message}`);
+    } finally {
+      setFreezing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        <span>Loading account dossier...</span>
+      </div>
+    );
+  }
+
+  if (error || !account) {
+    return (
+      <div className="p-6 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300">
+        <p>{error || 'Account not found.'}</p>
+        <button onClick={onBack} className="mt-3 text-xs underline">
+          Back to Accounts
+        </button>
+      </div>
+    );
+  }
+
+  const isCrit = account.risk_level === 'CRITICAL';
+  const isHigh = account.risk_level === 'HIGH';
+
+  return (
+    <div className="space-y-6">
+      {/* Header & Freeze Action */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Accounts
+        </button>
+
+        <button
+          disabled={freezing}
+          onClick={handleToggleFreeze}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+            account.is_frozen
+              ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
+              : 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 border border-rose-500/30'
+          }`}
+        >
+          <Snowflake className="h-4 w-4" />
+          {account.is_frozen ? 'Unfreeze Account' : 'Simulate Account Freeze'}
+        </button>
+      </div>
+
+      {/* Account Profile Dossier Card */}
+      <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold font-mono text-slate-100">{account.account_id}</h2>
+              <span
+                className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded border ${
+                  isCrit
+                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                    : isHigh
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                    : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
+                }`}
+              >
+                {account.risk_score.toFixed(1)}/100 · {account.risk_level} RISK
+              </span>
+              {account.is_frozen && (
+                <span className="text-xs font-bold uppercase px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center gap-1">
+                  <Snowflake className="h-3 w-3" /> FROZEN
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-4 text-xs text-slate-400 mt-2">
+              <span className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5 text-cyan-400" />
+                Owner: <span className="text-slate-200 font-medium">{account.owner_name || account.owner_id || 'Unknown'}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Building className="h-3.5 w-3.5 text-indigo-400" />
+                Bank: <span className="text-slate-200 font-medium">{account.bank_name || account.bank_id || 'Apex Bank'}</span>
+              </span>
+              <span>Type: <span className="text-slate-200 font-medium">{account.account_type}</span></span>
+            </div>
+          </div>
+
+          <div className="text-right text-xs text-slate-400 space-y-1">
+            <div>Model Version: <span className="text-cyan-400 font-mono">{account.model_version}</span></div>
+            <div>Evaluated: <span className="text-slate-200">{account.calculated_at ? new Date(account.calculated_at).toLocaleTimeString() : 'Real-time'}</span></div>
+          </div>
+        </div>
+
+        {/* GDS Graph Metrics & Subscores Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
+            <span className="text-slate-400">PageRank Centrality</span>
+            <div className="text-lg font-bold text-cyan-400 mt-1">{account.features.pagerank.toFixed(3)}</div>
+          </div>
+          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
+            <span className="text-slate-400">Network Degree</span>
+            <div className="text-lg font-bold text-slate-200 mt-1">
+              {account.features.total_degree} <span className="text-xs text-slate-400 font-normal">(In {account.features.in_degree}, Out {account.features.out_degree})</span>
+            </div>
+          </div>
+          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
+            <span className="text-slate-400">Louvain Community</span>
+            <div className="text-lg font-bold text-indigo-400 mt-1">
+              {account.features.louvain_community_id !== undefined ? `Group ${account.features.louvain_community_id}` : 'None'}
+            </div>
+          </div>
+          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
+            <span className="text-slate-400">Total Transacted Volume</span>
+            <div className="text-lg font-bold text-emerald-400 mt-1">
+              ${account.features.total_volume.toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {/* Explainable Reasons */}
+        <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Why is this account flagged with elevated risk?
+          </div>
+          <ul className="space-y-1.5 text-xs text-slate-300">
+            {account.risk_reasons.map((rsn, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span className="text-cyan-400 font-bold">•</span>
+                <span>{rsn}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Subgraph Neighborhood */}
+      {graphData && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-200">
+              Interactive Subgraph Neighborhood ({account.account_id})
+            </h3>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-400">Depth:</span>
+              <button
+                onClick={() => setGraphDepth(1)}
+                className={`px-2 py-0.5 rounded ${graphDepth === 1 ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300'}`}
+              >
+                1 Hop
+              </button>
+              <button
+                onClick={() => setGraphDepth(2)}
+                className={`px-2 py-0.5 rounded ${graphDepth === 2 ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300'}`}
+              >
+                2 Hops
+              </button>
+            </div>
+          </div>
+          <InteractiveGraph
+            data={graphData}
+            focalAccountId={account.account_id}
+            onSelectNode={onSelectAccount}
+            height={450}
+          />
+        </div>
+      )}
+
+      {/* Transaction History Timeline */}
+      <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-3">
+        <h3 className="text-sm font-bold tracking-tight text-slate-200">
+          Settled Transaction Timeline ({transactions.length})
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="text-[11px] uppercase font-semibold text-slate-400 bg-slate-800/40 border-b border-slate-800">
+              <tr>
+                <th className="py-2.5 px-3">Transaction ID</th>
+                <th className="py-2.5 px-3">Direction</th>
+                <th className="py-2.5 px-3">Counterparty</th>
+                <th className="py-2.5 px-3">Amount</th>
+                <th className="py-2.5 px-3">Timestamp</th>
+                <th className="py-2.5 px-3">Type</th>
+                <th className="py-2.5 px-3">Scenario</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {transactions.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-6 text-center text-slate-400">
+                    No transactions recorded for this account.
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((tx) => (
+                  <tr key={tx.transaction_id} className="hover:bg-slate-800/30">
+                    <td className="py-2.5 px-3 font-mono text-cyan-400">{tx.transaction_id}</td>
+                    <td className="py-2.5 px-3">
+                      <span
+                        className={`font-semibold text-[10px] px-2 py-0.5 rounded ${
+                          tx.direction === 'INCOMING'
+                            ? 'bg-emerald-500/10 text-emerald-400'
+                            : 'bg-rose-500/10 text-rose-400'
+                        }`}
+                      >
+                        {tx.direction}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <button
+                        onClick={() => onSelectAccount(tx.counterparty)}
+                        className="font-bold text-slate-200 hover:text-cyan-400 hover:underline"
+                      >
+                        {tx.counterparty}
+                      </button>
+                    </td>
+                    <td className="py-2.5 px-3 font-semibold text-slate-100">
+                      ${tx.amount.toLocaleString()} {tx.currency}
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-400">
+                      {new Date(tx.timestamp).toLocaleString()}
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-300">{tx.transaction_type}</td>
+                    <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{tx.scenario_id || '—'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};

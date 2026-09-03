@@ -8,11 +8,11 @@
 | **Phase 4** | **Neo4j Schema, Constraints & Seeds** | 🟢 **Completed** | 43 Tests Passed | Validated |
 | **Phase 5** | **Apache Flink Stream Pipeline** | 🟢 **Completed** | 60 Tests Passed | Validated |
 | **Phase 6** | **Cypher Fraud Detection Library** | 🟢 **Completed** | 76 Tests Passed | Validated |
-| **Phase 7** | **Neo4j Graph Data Science (GDS)** | 🟢 **Completed** | 90 Tests Passed | Validated |
-| **Phase 8** | **FastAPI Backend REST Services** | ⚪ Planned | Pending | Pending |
-| **Phase 9** | **Alerting & Deduplication Engine** | ⚪ Planned | Pending | Pending |
-| **Phase 10** | **Investigation API & Case Management** | ⚪ Planned | Pending | Pending |
-| **Phase 11** | **React + D3 Investigation Dashboard** | ⚪ Planned | Pending | Pending |
+| **Phase 7** | **Neo4j Graph Data Science (GDS)** | 🟢 **Completed** | 93 Tests Passed | Validated |
+| **Phase 8** | **Investigation API + React Dashboard** | 🟢 **Completed** | 103 Tests Passed | Validated |
+| **Phase 9** | **Real-Time Alerting + Live Stream Updates** | ⚪ Planned | Pending | Pending |
+| **Phase 10** | **Investigation Case Management & Notes** | ⚪ Planned | Pending | Pending |
+| **Phase 11** | **Advanced Multi-Cluster Visualizer** | ⚪ Planned | Pending | Pending |
 | **Phase 12** | **Performance & E2E Verification** | ⚪ Planned | Pending | Pending |
 | **Phase 13** | **Documentation & Final Polish** | ⚪ Planned | Pending | Pending |
 
@@ -48,4 +48,9 @@
   - `analytics/src/risk_engine.py`: Explainable composite risk engine ($60\%$ rule $+ 40\%$ graph) with audit justifications and batch persistence.
   - `analytics/src/cli.py`: Analytics CLI supporting `--all`, `--account`, `--run-gds`, `--calculate-risk`, `--persist`, and JSON output.
   - `neo4j/cypher/gds/`: Reusable GDS Cypher scripts.
-  - `tests/analytics/`: Complete test suite covering models, GDS lifecycle, risk engine, thresholds, explanations, missing data, and persistence.
+- **Phase 8**:
+  - `backend/app/main.py` & `api/src/main.py`: FastAPI REST application with Swagger UI and ReDoc.
+  - `backend/app/routes/`: Comprehensive endpoints for `/health`, `/health/neo4j`, `/api/v1/alerts`, `/api/v1/accounts`, `/api/v1/accounts/{id}/graph`, `/api/v1/investigation/money-trail`, `/api/v1/dashboard/summary`, and `/api/v1/accounts/{id}/freeze`.
+  - `backend/app/services/`: Enterprise service layer integrating `DetectionEngine`, `GDSManager`, and `ExplainableRiskEngine`.
+  - `dashboard/` & `frontend/`: React 18 + TypeScript + D3 force-directed investigation workstation with Executive Overview, Alert Dossiers, Account Histories, Subgraph Visualizer, and Money Trail Tracer.
+  - `tests/api/`: Comprehensive FastAPI endpoint tests passing 10/10 (103/103 tests passing repository-wide).
