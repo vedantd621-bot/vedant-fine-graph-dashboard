@@ -43,6 +43,14 @@ class EventType(str, Enum):
     CAMPAIGN_DISCOVERED = "campaign.discovered"
     CAMPAIGN_UPDATED = "campaign.updated"
     CAMPAIGN_CONFIRMED = "campaign.confirmed"
+    NETWORK_EVOLUTION_CHANGED = "network.evolution_changed"
+    NETWORK_RISK_SPIKE = "network.risk_spike"
+    NETWORK_EMERGING = "network.emerging"
+    ENTITY_RISK_CHANGED = "entity.risk_changed"
+    EARLY_WARNING_CREATED = "early_warning.created"
+    PATTERN_DISCOVERED = "pattern.discovered"
+    THREAT_LEVEL_CHANGED = "threat_level.changed"
+    ENTERPRISE_FORECAST_UPDATED = "enterprise.forecast_updated"
     SYSTEM_PING = "system.ping"
     SYSTEM_PONG = "system.pong"
     ERROR = "error"
@@ -361,6 +369,46 @@ class CampaignConfirmedPayload(BaseModel):
     name: str
     confirmed_by: str
     confirmed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class NetworkEvolutionChangedPayload(BaseModel):
+    """Payload emitted when a fraud network evolution snapshot updates."""
+    network_id: str
+    window: str
+    growth_rate: float
+    risk_delta: float
+    trajectory: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class EarlyWarningCreatedPayload(BaseModel):
+    """Payload emitted when a proactive early warning trigger fires."""
+    warning_id: str
+    severity: str
+    entity_type: str
+    entity_id: str
+    risk_score: float
+    explanation: str
+    recommended_action: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class PatternDiscoveredPayload(BaseModel):
+    """Payload emitted when a recurring fraud motif is discovered."""
+    pattern_id: str
+    name: str
+    pattern_type: str
+    frequency: int
+    risk_score: float
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ThreatLevelChangedPayload(BaseModel):
+    """Payload emitted when enterprise threat level shifts."""
+    threat_level: str
+    score: float
+    previous_level: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ErrorPayload(BaseModel):

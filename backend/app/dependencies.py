@@ -277,3 +277,21 @@ def get_case_intelligence_service() -> CaseIntelligenceService:
     """Returns singleton CaseIntelligenceService instance."""
     from backend.app.case_intelligence.service import get_case_intelligence_service as _get_cis
     return _get_cis()
+
+
+def get_network_evolution_service() -> NetworkEvolutionService:
+    """Returns singleton NetworkEvolutionService."""
+    from backend.app.network_evolution.service import get_network_evolution_service as _get_nes
+    return _get_nes()
+
+
+def get_early_warning_service() -> EarlyWarningService:
+    """Returns singleton EarlyWarningService."""
+    from backend.app.early_warning.service import get_early_warning_service as _get_ews
+    return _get_ews()
+
+
+def get_pattern_discovery_service() -> PatternDiscoveryService:
+    """Returns singleton PatternDiscoveryService."""
+    from backend.app.pattern_discovery.service import get_pattern_discovery_service as _get_pds
+    return _get_pds()

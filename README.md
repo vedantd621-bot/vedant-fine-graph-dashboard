@@ -198,3 +198,10 @@ python -m pytest simulator/tests/ tests/ -v
 - **Bounded Case Relationship Graph**: Sub-millisecond D3 force graph synthesis uniting cases, alerts, accounts, transactions, and evidence.
 - **Fraud Campaign Discovery**: Clustered multi-case campaigns evaluated via deterministic 6-factor risk scoring and financial exposure quantification.
 - **Investigation Collaboration**: Role-based access (`OWNER`, `COLLABORATOR`, `WATCHER`), auditable comments with edit/soft-delete tracking, and immutable append-only activity feeds.
+
+### Phase 16: Advanced Fraud Graph Intelligence, Predictive Risk & Network Evolution
+- **Network Evolution & Velocity**: Temporal snapshot comparisons over bounded windows (`5m` to `30d`), hourly activity velocity, and deterministic risk trajectories.
+- **Predictive Risk Forecasting**: Time-series risk forecasts across $1\text{h}$, $6\text{h}$, $24\text{h}$, and $7\text{d}$ with explicit historical sufficiency checks.
+- **Proactive Early Warnings**: Multi-signal trigger rules, non-destructive recommendations, and investigator lifecycle workflows.
+- **Pattern Discovery & Similarity**: Recurring graph motif extraction and deterministic structural similarity matching.
+- **Enterprise Threat Level**: Executive composite threat evaluation ($0–100$) and predictive threat forecasting.

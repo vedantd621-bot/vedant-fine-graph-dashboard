@@ -1,3 +1,4 @@
+from backend.app.routes.advanced_intelligence import router as advanced_intelligence_router
 """
 FinGraph API Route Modules.
 """
@@ -21,6 +22,7 @@ from backend.app.routes.operations import router as operations_router
 from backend.app.routes.websocket import router as websocket_router
 
 __all__ = [
+    "advanced_intelligence_router",
     "accounts_router",
     "admin_router",
     "alerts_router",

@@ -10,6 +10,8 @@ import {
   Briefcase,
   TrendingUp,
   Zap,
+  Activity,
+  Layers,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -24,12 +26,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   openAlertsCount = 0,
 }) => {
   const navItems = [
-    { id: 'command-center', label: 'Command Center', icon: Zap },
+    { id: 'command-center', label: 'Command Center V2', icon: Zap },
+    { id: 'early-warnings', label: 'Early Warning Center', icon: AlertTriangle },
+    { id: 'network-evolution', label: 'Network Evolution', icon: Activity },
+    { id: 'pattern-intelligence', label: 'Pattern Intelligence', icon: Layers },
+    { id: 'case-intelligence', label: 'Case Intelligence', icon: Share2 },
     { id: 'dashboard', label: 'Executive Overview', icon: LayoutDashboard },
     { id: 'operations', label: 'Fraud Ops Dashboard', icon: TrendingUp },
     { id: 'queue', label: 'Alert Queue & Triage', icon: ListOrdered },
     { id: 'investigator-hub', label: 'Investigator Workspace', icon: Briefcase },
-    { id: 'case-intelligence', label: 'Case Intelligence', icon: Share2 },
     { id: 'alerts', label: 'Alerts Catalog', icon: AlertTriangle, badge: openAlertsCount },
     { id: 'accounts', label: 'Account Dossiers', icon: Users },
     { id: 'cases', label: 'Investigation Cases', icon: ShieldAlert },
@@ -76,16 +81,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* System Status Footnote */}
       <div className="p-3.5 rounded-xl bg-slate-800/50 border border-slate-800 text-xs space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">Command Center</span>
-          <span className="text-cyan-400 font-semibold">Phase 15 Active</span>
+          <span className="text-slate-400">Intelligence V2</span>
+          <span className="text-cyan-400 font-semibold">Phase 16 Active</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">Posture Index</span>
-          <span className="text-emerald-400 font-medium">Explainable 0-100</span>
+          <span className="text-slate-400">Threat Forecast</span>
+          <span className="text-emerald-400 font-medium">1h - 7d Horizons</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">Pipeline</span>
-          <span className="text-slate-300 font-medium">Flink 1.18 KRaft</span>
+          <span className="text-slate-400">Evolution Engine</span>
+          <span className="text-slate-300 font-medium">Deterministic Velocity</span>
         </div>
       </div>
     </aside>

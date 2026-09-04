@@ -16,6 +16,9 @@ import { FraudOperationsDashboard } from './pages/FraudOperationsDashboard';
 import { FraudCommandCenterPage } from './pages/FraudCommandCenterPage';
 import { CaseIntelligencePage } from './pages/CaseIntelligencePage';
 import { FraudCampaignDetailPage } from './pages/FraudCampaignDetailPage';
+import { NetworkEvolutionPage } from './pages/NetworkEvolutionPage';
+import { EarlyWarningPage } from './pages/EarlyWarningPage';
+import { PatternIntelligencePage } from './pages/PatternIntelligencePage';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { LoginPage } from './auth/LoginPage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -114,6 +117,12 @@ export const AppContent: React.FC = () => {
                 onSelectCampaign={handleSelectCampaign}
               />
             )}
+
+            {activeTab === 'early-warnings' && <EarlyWarningPage />}
+
+            {activeTab === 'network-evolution' && <NetworkEvolutionPage />}
+
+            {activeTab === 'pattern-intelligence' && <PatternIntelligencePage />}
 
             {activeTab === 'campaign-detail' && selectedCampaignId && (
               <FraudCampaignDetailPage

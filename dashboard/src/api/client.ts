@@ -498,4 +498,75 @@ export const apiClient = {
     const res = await api.get<ApiResponse<EnterpriseFraudPosture>>('/api/v1/case-intelligence/command-center/posture');
     return res.data;
   },
+
+  // Phase 16: Advanced Graph Intelligence & Predictive Risk
+  getNetworkEvolution: async (networkId: string, window: string = '1h') => {
+    const res = await api.get<ApiResponse<NetworkEvolutionSnapshot>>(`/api/v1/advanced-intelligence/networks/${networkId}/evolution`, { params: { window } });
+    return res.data;
+  },
+  getNetworkTrajectory: async (networkId: string) => {
+    const res = await api.get<ApiResponse<any>>(`/api/v1/advanced-intelligence/networks/${networkId}/trajectory`);
+    return res.data;
+  },
+  getNetworkForecast: async (networkId: string) => {
+    const res = await api.get<ApiResponse<NetworkRiskForecast>>(`/api/v1/advanced-intelligence/networks/${networkId}/forecast`);
+    return res.data;
+  },
+  getEntityTrajectory: async (entityType: string, entityId: string) => {
+    const res = await api.get<ApiResponse<EntityRiskTrajectory>>(`/api/v1/advanced-intelligence/entities/${entityType}/${entityId}/trajectory`);
+    return res.data;
+  },
+  listEmergingNetworks: async () => {
+    const res = await api.get<ApiResponse<EmergingNetwork[]>>('/api/v1/advanced-intelligence/emerging-networks');
+    return res.data;
+  },
+  listEarlyWarnings: async (params?: { severity?: string; status?: string; entity_type?: string }) => {
+    const res = await api.get<ApiResponse<EarlyWarning[]>>('/api/v1/advanced-intelligence/early-warnings', { params });
+    return res.data;
+  },
+  getEarlyWarning: async (warningId: string) => {
+    const res = await api.get<ApiResponse<EarlyWarning>>(`/api/v1/advanced-intelligence/early-warnings/${warningId}`);
+    return res.data;
+  },
+  acknowledgeEarlyWarning: async (warningId: string, req: EarlyWarningActionRequest) => {
+    const res = await api.post<ApiResponse<EarlyWarning>>(`/api/v1/advanced-intelligence/early-warnings/${warningId}/acknowledge`, req);
+    return res.data;
+  },
+  escalateEarlyWarning: async (warningId: string, req: EarlyWarningActionRequest) => {
+    const res = await api.post<ApiResponse<EarlyWarning>>(`/api/v1/advanced-intelligence/early-warnings/${warningId}/escalate`, req);
+    return res.data;
+  },
+  dismissEarlyWarning: async (warningId: string, req: EarlyWarningActionRequest) => {
+    const res = await api.post<ApiResponse<EarlyWarning>>(`/api/v1/advanced-intelligence/early-warnings/${warningId}/dismiss`, req);
+    return res.data;
+  },
+  listDiscoveredPatterns: async (patternType?: string) => {
+    const params = patternType ? { pattern_type: patternType } : {};
+    const res = await api.get<ApiResponse<DiscoveredPattern[]>>('/api/v1/advanced-intelligence/patterns', { params });
+    return res.data;
+  },
+  getDiscoveredPattern: async (patternId: string) => {
+    const res = await api.get<ApiResponse<DiscoveredPattern>>(`/api/v1/advanced-intelligence/patterns/${patternId}`);
+    return res.data;
+  },
+  getSimilarPatterns: async (patternId: string) => {
+    const res = await api.get<ApiResponse<PatternSimilarityResponse[]>>(`/api/v1/advanced-intelligence/patterns/${patternId}/similar`);
+    return res.data;
+  },
+  getEnterpriseThreatLevel: async () => {
+    const res = await api.get<ApiResponse<EnterpriseThreatAssessment>>('/api/v1/advanced-intelligence/threat-level');
+    return res.data;
+  },
+  getEnterpriseThreatHistory: async () => {
+    const res = await api.get<ApiResponse<any[]>>('/api/v1/advanced-intelligence/threat-level/history');
+    return res.data;
+  },
+  getEnterpriseRiskForecast: async () => {
+    const res = await api.get<ApiResponse<EnterpriseRiskForecast>>('/api/v1/advanced-intelligence/enterprise-forecast');
+    return res.data;
+  },
+  getCommandCenterAdvancedSummary: async () => {
+    const res = await api.get<ApiResponse<any>>('/api/v1/advanced-intelligence/command-center/advanced-summary');
+    return res.data;
+  },
 };
