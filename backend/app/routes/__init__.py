@@ -7,6 +7,7 @@ from backend.app.routes.alerts import router as alerts_router
 from backend.app.routes.auth import router as auth_router
 from backend.app.routes.behavior import router as behavior_router
 from backend.app.routes.cases import router as cases_router
+from backend.app.routes.case_intelligence import router as case_intelligence_router
 from backend.app.routes.dashboard import router as dashboard_router
 from backend.app.routes.features import router as features_router
 from backend.app.routes.graph import router as graph_router
@@ -25,6 +26,7 @@ __all__ = [
     "alerts_router",
     "auth_router",
     "behavior_router",
+    "case_intelligence_router",
     "cases_router",
     "dashboard_router",
     "features_router",

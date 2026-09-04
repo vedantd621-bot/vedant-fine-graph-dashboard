@@ -34,6 +34,7 @@ from backend.app.routes import (
     alerts_router,
     auth_router,
     behavior_router,
+    case_intelligence_router,
     cases_router,
     dashboard_router,
     features_router,
@@ -187,6 +188,7 @@ app.include_router(admin_router)
 app.include_router(alerts_router)
 app.include_router(accounts_router)
 app.include_router(cases_router)
+app.include_router(case_intelligence_router)
 app.include_router(intelligence_router)
 app.include_router(operations_router)
 app.include_router(notifications_router)

@@ -1,3 +1,4 @@
+export * from './case_intelligence';
 export * from './networks';
 export * from './behavior';
 export * from './features';

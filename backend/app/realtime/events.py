@@ -35,6 +35,14 @@ class EventType(str, Enum):
     NETWORK_RISK_UPDATED = "network.risk_updated"
     ANOMALY_DETECTED = "anomaly.detected"
     ENTITY_BEHAVIOR_CHANGED = "entity.behavior_changed"
+    CASE_COMMENT_ADDED = "case.comment_added"
+    CASE_COLLABORATOR_ADDED = "case.collaborator_added"
+    CASE_COLLABORATOR_REMOVED = "case.collaborator_removed"
+    CASE_ACTIVITY_CREATED = "case.activity_created"
+    CASE_CORRELATED = "case.correlated"
+    CAMPAIGN_DISCOVERED = "campaign.discovered"
+    CAMPAIGN_UPDATED = "campaign.updated"
+    CAMPAIGN_CONFIRMED = "campaign.confirmed"
     SYSTEM_PING = "system.ping"
     SYSTEM_PONG = "system.pong"
     ERROR = "error"
@@ -278,6 +286,81 @@ class EntityBehaviorChangedPayload(BaseModel):
     is_anomalous: bool
     active_anomalies_count: int
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CaseCommentAddedPayload(BaseModel):
+    """Payload emitted when a new comment is posted on a case."""
+    case_id: str
+    comment_id: str
+    author_id: str
+    author_name: str
+    content: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CaseCollaboratorAddedPayload(BaseModel):
+    """Payload emitted when a collaborator is assigned to a case."""
+    case_id: str
+    user_id: str
+    username: str
+    role: str
+    added_by: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CaseCollaboratorRemovedPayload(BaseModel):
+    """Payload emitted when a collaborator is removed from a case."""
+    case_id: str
+    user_id: str
+    removed_by: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CaseActivityCreatedPayload(BaseModel):
+    """Payload emitted when an activity feed entry is recorded."""
+    event_id: str
+    case_id: str
+    actor_name: str
+    event_type: str
+    summary: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CaseCorrelatedPayload(BaseModel):
+    """Payload emitted when cross-case correlation is identified."""
+    case_a: str
+    case_b: str
+    signal_type: str
+    signal_strength: float
+    confidence: float
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CampaignDiscoveredPayload(BaseModel):
+    """Payload emitted when a new fraud campaign cluster is discovered."""
+    campaign_id: str
+    name: str
+    risk_score: float
+    confidence: float
+    case_count: int
+    exposure: float
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CampaignUpdatedPayload(BaseModel):
+    """Payload emitted when a fraud campaign status or metadata changes."""
+    campaign_id: str
+    status: str
+    risk_score: float
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CampaignConfirmedPayload(BaseModel):
+    """Payload emitted when a fraud campaign is confirmed by leadership."""
+    campaign_id: str
+    name: str
+    confirmed_by: str
+    confirmed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ErrorPayload(BaseModel):

@@ -9,6 +9,7 @@ import {
   ListOrdered,
   Briefcase,
   TrendingUp,
+  Zap,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,10 +24,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   openAlertsCount = 0,
 }) => {
   const navItems = [
+    { id: 'command-center', label: 'Command Center', icon: Zap },
     { id: 'dashboard', label: 'Executive Overview', icon: LayoutDashboard },
     { id: 'operations', label: 'Fraud Ops Dashboard', icon: TrendingUp },
     { id: 'queue', label: 'Alert Queue & Triage', icon: ListOrdered },
     { id: 'investigator-hub', label: 'Investigator Workspace', icon: Briefcase },
+    { id: 'case-intelligence', label: 'Case Intelligence', icon: Share2 },
     { id: 'alerts', label: 'Alerts Catalog', icon: AlertTriangle, badge: openAlertsCount },
     { id: 'accounts', label: 'Account Dossiers', icon: Users },
     { id: 'cases', label: 'Investigation Cases', icon: ShieldAlert },
@@ -73,12 +76,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* System Status Footnote */}
       <div className="p-3.5 rounded-xl bg-slate-800/50 border border-slate-800 text-xs space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">Operations</span>
-          <span className="text-cyan-400 font-semibold">Real-Time Queue</span>
+          <span className="text-slate-400">Command Center</span>
+          <span className="text-cyan-400 font-semibold">Phase 15 Active</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">SLA Engine</span>
-          <span className="text-emerald-400 font-medium">Dynamic Countdown</span>
+          <span className="text-slate-400">Posture Index</span>
+          <span className="text-emerald-400 font-medium">Explainable 0-100</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-400">Pipeline</span>

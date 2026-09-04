@@ -423,4 +423,79 @@ export const apiClient = {
     const res = await api.post<{ marked_read_count: number }>('/api/v1/notifications/read-all');
     return res.data;
   },
+
+  // Phase 15: Case Intelligence & Collaboration
+  getCaseCorrelations: async (caseId: string) => {
+    const res = await api.get<ApiResponse<CaseCorrelationResponse>>(`/api/v1/case-intelligence/cases/${caseId}/related`);
+    return res.data;
+  },
+  getCaseRelationshipGraph: async (caseId: string) => {
+    const res = await api.get<ApiResponse<CaseRelationshipGraph>>(`/api/v1/case-intelligence/cases/${caseId}/graph`);
+    return res.data;
+  },
+  getCaseEvidenceProvenance: async (caseId: string) => {
+    const res = await api.get<ApiResponse<CaseEvidenceProvenanceResponse>>(`/api/v1/case-intelligence/cases/${caseId}/evidence-provenance`);
+    return res.data;
+  },
+  getCaseActivityFeed: async (caseId: string) => {
+    const res = await api.get<ApiResponse<CaseActivityEvent[]>>(`/api/v1/case-intelligence/cases/${caseId}/activity`);
+    return res.data;
+  },
+  listCaseCollaborators: async (caseId: string) => {
+    const res = await api.get<ApiResponse<CaseCollaborator[]>>(`/api/v1/case-intelligence/cases/${caseId}/collaborators`);
+    return res.data;
+  },
+  addCaseCollaborator: async (caseId: string, req: AddCollaboratorRequest) => {
+    const res = await api.post<ApiResponse<CaseCollaborator>>(`/api/v1/case-intelligence/cases/${caseId}/collaborators`, req);
+    return res.data;
+  },
+  removeCaseCollaborator: async (caseId: string, userId: string) => {
+    const res = await api.delete<ApiResponse<{ success: boolean }>>(`/api/v1/case-intelligence/cases/${caseId}/collaborators/${userId}`);
+    return res.data;
+  },
+  listCaseComments: async (caseId: string) => {
+    const res = await api.get<ApiResponse<CaseComment[]>>(`/api/v1/case-intelligence/cases/${caseId}/comments`);
+    return res.data;
+  },
+  addCaseComment: async (caseId: string, req: AddCommentRequest) => {
+    const res = await api.post<ApiResponse<CaseComment>>(`/api/v1/case-intelligence/cases/${caseId}/comments`, req);
+    return res.data;
+  },
+  updateCaseComment: async (caseId: string, commentId: string, req: UpdateCommentRequest) => {
+    const res = await api.patch<ApiResponse<CaseComment>>(`/api/v1/case-intelligence/cases/${caseId}/comments/${commentId}`, req);
+    return res.data;
+  },
+  deleteCaseComment: async (caseId: string, commentId: string) => {
+    const res = await api.delete<ApiResponse<{ success: boolean }>>(`/api/v1/case-intelligence/cases/${caseId}/comments/${commentId}`);
+    return res.data;
+  },
+  listCampaigns: async (status?: string) => {
+    const params = status ? { status } : {};
+    const res = await api.get<ApiResponse<Campaign[]>>('/api/v1/case-intelligence/campaigns', { params });
+    return res.data;
+  },
+  getCampaign: async (campaignId: string) => {
+    const res = await api.get<ApiResponse<Campaign>>(`/api/v1/case-intelligence/campaigns/${campaignId}`);
+    return res.data;
+  },
+  updateCampaign: async (campaignId: string, req: CampaignUpdateRequest) => {
+    const res = await api.patch<ApiResponse<Campaign>>(`/api/v1/case-intelligence/campaigns/${campaignId}`, req);
+    return res.data;
+  },
+  getCampaignCases: async (campaignId: string) => {
+    const res = await api.get<ApiResponse<InvestigationCaseSummary[]>>(`/api/v1/case-intelligence/campaigns/${campaignId}/cases`);
+    return res.data;
+  },
+  getCampaignExplanation: async (campaignId: string) => {
+    const res = await api.get<ApiResponse<CampaignRiskExplanation>>(`/api/v1/case-intelligence/campaigns/${campaignId}/explanation`);
+    return res.data;
+  },
+  getCommandCenterSummary: async () => {
+    const res = await api.get<ApiResponse<CommandCenterSummary>>('/api/v1/case-intelligence/command-center/summary');
+    return res.data;
+  },
+  getEnterpriseFraudPosture: async () => {
+    const res = await api.get<ApiResponse<EnterpriseFraudPosture>>('/api/v1/case-intelligence/command-center/posture');
+    return res.data;
+  },
 };

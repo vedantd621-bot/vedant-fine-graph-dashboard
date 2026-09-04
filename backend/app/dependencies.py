@@ -271,3 +271,9 @@ def get_operations_service(
         prioritization_service=prioritization_service,
         audit_service=audit_service,
     )
+
+
+def get_case_intelligence_service() -> CaseIntelligenceService:
+    """Returns singleton CaseIntelligenceService instance."""
+    from backend.app.case_intelligence.service import get_case_intelligence_service as _get_cis
+    return _get_cis()

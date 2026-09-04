@@ -13,6 +13,9 @@ import { FraudNetworkDetailPage } from './pages/FraudNetworkDetailPage';
 import { AlertQueuePage } from './pages/AlertQueuePage';
 import { InvestigationOperationsPage } from './pages/InvestigationOperationsPage';
 import { FraudOperationsDashboard } from './pages/FraudOperationsDashboard';
+import { FraudCommandCenterPage } from './pages/FraudCommandCenterPage';
+import { CaseIntelligencePage } from './pages/CaseIntelligencePage';
+import { FraudCampaignDetailPage } from './pages/FraudCampaignDetailPage';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { LoginPage } from './auth/LoginPage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -21,10 +24,12 @@ import { AlertToast } from './components/realtime/AlertToast';
 
 export const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>('command-center');
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>('CMP-2026-001');
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   if (isLoading) {
@@ -57,6 +62,16 @@ export const AppContent: React.FC = () => {
     setActiveTab('network-detail');
   };
 
+  const handleSelectCampaign = (campaignId: string) => {
+    setSelectedCampaignId(campaignId);
+    setActiveTab('campaign-detail');
+  };
+
+  const handleSelectCase = (caseId: string) => {
+    setSelectedCaseId(caseId);
+    setActiveTab('cases');
+  };
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setActiveTab('investigation');
@@ -85,12 +100,33 @@ export const AppContent: React.FC = () => {
                 ? 'alerts'
                 : activeTab.startsWith('network')
                 ? 'networks'
+                : activeTab.startsWith('campaign')
+                ? 'command-center'
                 : activeTab
             }
             setActiveTab={setActiveTab}
           />
 
           <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full">
+            {activeTab === 'command-center' && (
+              <FraudCommandCenterPage
+                onNavigate={setActiveTab}
+                onSelectCampaign={handleSelectCampaign}
+              />
+            )}
+
+            {activeTab === 'campaign-detail' && selectedCampaignId && (
+              <FraudCampaignDetailPage
+                campaignId={selectedCampaignId}
+                onBack={() => setActiveTab('command-center')}
+                onSelectCase={handleSelectCase}
+              />
+            )}
+
+            {activeTab === 'case-intelligence' && (
+              <CaseIntelligencePage onSelectCase={handleSelectCase} />
+            )}
+
             {activeTab === 'dashboard' && (
               <DashboardPage
                 onSelectAccount={handleSelectAccount}
