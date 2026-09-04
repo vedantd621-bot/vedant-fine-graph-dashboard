@@ -1,17 +1,29 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import {
   AccountDetail,
   AccountSummary,
   AccountTransactionItem,
+  AlertCorrelation,
   AlertDetail,
+  AlertRecommendationsResponse,
   AlertStatus,
   AlertSummary,
   ApiResponse,
+  CaseCreateRequest,
+  CaseListResponse,
+  CaseUpdateRequest,
   DashboardSummary,
+  EntityRiskProfile,
+  EvidenceItem,
   GraphPayload,
+  InvestigationAnalytics,
+  InvestigationCase,
+  InvestigationNote,
+  InvestigationTimelineResponse,
   MoneyTrailPath,
   PaginatedResponse,
   RiskDistribution,
+  RiskExplanationResponse,
   SearchResults,
 } from '../types';
 
@@ -95,6 +107,14 @@ export const apiClient = {
     const res = await api.patch<ApiResponse<AlertDetail>>(`/api/v1/alerts/${alertId}`, { status });
     return res.data.data;
   },
+  getCorrelatedAlerts: async (alertId: string) => {
+    const res = await api.get<AlertCorrelation>(`/api/v1/alerts/${alertId}/correlated`);
+    return res.data;
+  },
+  getAlertRecommendations: async (alertId: string) => {
+    const res = await api.get<AlertRecommendationsResponse>(`/api/v1/alerts/${alertId}/recommendations`);
+    return res.data;
+  },
 
   // Accounts
   listAccounts: async (params?: {
@@ -136,7 +156,98 @@ export const apiClient = {
     return res.data.data;
   },
 
-  // Investigation
+  // Graph Neighborhood
+  getGraphNeighborhood: async (accountId: string, hops: number = 2) => {
+    const res = await api.get<GraphPayload>(`/api/v1/graph/neighborhood/${accountId}?hops=${hops}`);
+    return res.data;
+  },
+  getSuspiciousNeighborhood: async (accountId: string, minRisk: number = 60.0) => {
+    const res = await api.get<GraphPayload>(`/api/v1/graph/suspicious-neighborhood/${accountId}?min_risk=${minRisk}`);
+    return res.data;
+  },
+  getCommonCounterparties: async (accountA: string, accountB: string) => {
+    const res = await api.get<any>(`/api/v1/graph/common-counterparties?account_a=${accountA}&account_b=${accountB}`);
+    return res.data;
+  },
+
+  // Cases Management
+  listCases: async (params?: {
+    status?: string;
+    priority?: string;
+    assigned_to?: string;
+    search?: string;
+    page?: number;
+    page_size?: number;
+  }) => {
+    const res = await api.get<CaseListResponse>('/api/v1/cases', { params });
+    return res.data;
+  },
+  getCaseDetail: async (caseId: string) => {
+    const res = await api.get<InvestigationCase>(`/api/v1/cases/${caseId}`);
+    return res.data;
+  },
+  createCase: async (payload: CaseCreateRequest) => {
+    const res = await api.post<InvestigationCase>('/api/v1/cases', payload);
+    return res.data;
+  },
+  updateCase: async (caseId: string, payload: CaseUpdateRequest) => {
+    const res = await api.patch<InvestigationCase>(`/api/v1/cases/${caseId}`, payload);
+    return res.data;
+  },
+  assignInvestigator: async (caseId: string, investigator: string) => {
+    const res = await api.post<InvestigationCase>(`/api/v1/cases/${caseId}/assign`, {
+      assigned_investigator: investigator,
+    });
+    return res.data;
+  },
+  addCaseNote: async (caseId: string, content: string) => {
+    const res = await api.post<InvestigationNote>(`/api/v1/cases/${caseId}/notes`, { content });
+    return res.data;
+  },
+  attachEvidence: async (caseId: string, payload: any) => {
+    const res = await api.post<EvidenceItem>(`/api/v1/cases/${caseId}/evidence`, payload);
+    return res.data;
+  },
+  linkAlertToCase: async (caseId: string, alertId: string) => {
+    const res = await api.post<InvestigationCase>(`/api/v1/cases/${caseId}/alerts`, { alert_id: alertId });
+    return res.data;
+  },
+  unlinkAlertFromCase: async (caseId: string, alertId: string) => {
+    const res = await api.delete<InvestigationCase>(`/api/v1/cases/${caseId}/alerts/${alertId}`);
+    return res.data;
+  },
+  linkAccountToCase: async (caseId: string, accountId: string) => {
+    const res = await api.post<InvestigationCase>(`/api/v1/cases/${caseId}/accounts`, { account_id: accountId });
+    return res.data;
+  },
+  unlinkAccountFromCase: async (caseId: string, accountId: string) => {
+    const res = await api.delete<InvestigationCase>(`/api/v1/cases/${caseId}/accounts/${accountId}`);
+    return res.data;
+  },
+  getCaseTimeline: async (caseId: string) => {
+    const res = await api.get<InvestigationTimelineResponse>(`/api/v1/cases/${caseId}/timeline`);
+    return res.data;
+  },
+
+  // Intelligence & Explainability
+  getEntityRiskProfile: async (entityId: string, entityType: string = 'ACCOUNT') => {
+    const res = await api.get<EntityRiskProfile>(`/api/v1/entities/${entityId}/risk-profile?entity_type=${entityType}`);
+    return res.data;
+  },
+  getEntityRiskExplanation: async (entityId: string) => {
+    const res = await api.get<RiskExplanationResponse>(`/api/v1/entities/${entityId}/risk-explanation`);
+    return res.data;
+  },
+  getEntityTimeline: async (entityId: string) => {
+    const res = await api.get<InvestigationTimelineResponse>(`/api/v1/entities/${entityId}/timeline`);
+    return res.data;
+  },
+  getInvestigationAnalytics: async () => {
+    const res = await api.get<InvestigationAnalytics>('/api/v1/investigation/analytics');
+    return res.data;
+  },
+
+  // Money Trail & Search
   traceMoneyTrail: async (fromAccount: string, toAccount?: string, maxDepth: number = 4) => {
     const params: any = { from_account: fromAccount, max_depth: maxDepth };
     if (toAccount) params.to_account = toAccount;

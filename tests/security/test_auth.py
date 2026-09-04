@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.dependencies import get_neo4j_client
 from backend.app.main import app
+from backend.app.middleware.rate_limiter import reset_rate_limiter
 from backend.app.security.jwt import create_access_token, decode_access_token
 from backend.app.security.models import CreateUserRequest, Role
 from backend.app.security.passwords import hash_password, verify_password
@@ -40,6 +41,7 @@ def test_jwt_generation_and_expiration():
 
 def test_login_success_and_current_user():
     """Verify successful login returns bearer token and /me profile retrieval."""
+    reset_rate_limiter()
     mock_neo4j = MagicMock()
     app.dependency_overrides[get_neo4j_client] = lambda: mock_neo4j
     client = TestClient(app)
@@ -75,6 +77,7 @@ def test_login_success_and_current_user():
 
 def test_login_invalid_credentials():
     """Verify failed login returns 401 Unauthorized."""
+    reset_rate_limiter()
     mock_neo4j = MagicMock()
     app.dependency_overrides[get_neo4j_client] = lambda: mock_neo4j
     client = TestClient(app)

@@ -1,4 +1,4 @@
-"""
+﻿"""
 FinGraph FastAPI Dependency Injection Provider.
 Provides singleton Neo4j client, DetectionEngine, GDSManager, RiskEngine, and service instances to route handlers.
 """
@@ -19,11 +19,14 @@ from detection.src.engine import DetectionEngine
 from analytics.src.gds_manager import GDSManager
 from analytics.src.risk_engine import ExplainableRiskEngine
 from backend.app.config import ApiConfig, get_api_config
+from backend.app.security.audit import AuditService, get_audit_service
 from backend.app.services.alert_service import AlertService
 from backend.app.services.account_service import AccountService
 from backend.app.services.graph_service import GraphService
 from backend.app.services.dashboard_service import DashboardService
 from backend.app.services.investigation_service import InvestigationService
+from backend.app.services.case_service import CaseService, get_case_service
+from backend.app.services.intelligence_service import IntelligenceService
 
 logger = logging.getLogger("FinGraph.Dependencies")
 
@@ -140,4 +143,25 @@ def get_investigation_service(
         detection_engine=detection_engine,
         account_service=account_service,
         alert_service=alert_service,
+    )
+
+
+def get_intelligence_service(
+    client: Neo4jClient = Depends(get_neo4j_client),
+    detection_engine: DetectionEngine = Depends(get_detection_engine),
+    risk_engine: ExplainableRiskEngine = Depends(get_risk_engine),
+    account_service: AccountService = Depends(get_account_service),
+    alert_service: AlertService = Depends(get_alert_service),
+    case_service: CaseService = Depends(get_case_service),
+    audit_service: AuditService = Depends(get_audit_service),
+) -> IntelligenceService:
+    """Returns IntelligenceService instance."""
+    return IntelligenceService(
+        client=client,
+        detection_engine=detection_engine,
+        risk_engine=risk_engine,
+        account_service=account_service,
+        alert_service=alert_service,
+        case_service=case_service,
+        audit_service=audit_service,
     )

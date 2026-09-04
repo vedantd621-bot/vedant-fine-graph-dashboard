@@ -1,4 +1,4 @@
-﻿# FinGraph — Real-Time Fraud Syndicate Analytics Platform
+# FinGraph — Real-Time Fraud Syndicate Analytics Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-brightgreen.svg)](https://www.python.org/)
@@ -7,9 +7,9 @@
 [![Neo4j](https://img.shields.io/badge/Graph%20DB-Neo4j%205%20%2B%20GDS-blue.svg)](https://neo4j.com/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-teal.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/Frontend-React%2018%20%2B%20D3-cyan.svg)](https://react.dev/)
-[![Tests](https://img.shields.io/badge/Tests-125%20Passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-144%20Passed-brightgreen.svg)](tests/)
 
-> **Enterprise-Grade FinTech & AML Graph Analytics System** detecting multi-entity suspicious financial syndicates using high-throughput stream ingestion, graph topological pattern detection, Neo4j Graph Data Science (GDS) algorithms, real-time WebSockets, and an interactive analyst investigation workstation with Role-Based Access Control (RBAC).
+> **Enterprise-Grade FinTech & AML Graph Analytics System** detecting multi-entity suspicious financial syndicates using high-throughput stream ingestion, graph topological pattern detection, Neo4j Graph Data Science (GDS) algorithms, real-time WebSockets, cryptographic case management with SHA-256 evidence vaults, and an interactive analyst investigation workstation with Role-Based Access Control (RBAC).
 
 ---
 
@@ -38,6 +38,7 @@ Point-in-time transactional rules fail to capture **topological network structur
 8. Real-time alerting and updates pushed via **WebSockets** and internal pub/sub event bus.
 9. Interactive analyst dashboard in **React + D3.js** with path highlighting, subgraph inspection, dossier triage, and a **"Freeze Account"** remediation workflow.
 10. Hardened production security with **RFC 7519 JWT Auth**, **PBKDF2 password hashing**, **RBAC guards**, **rate limiting**, **Prometheus observability**, and non-root Docker deployments.
+11. **Phase 11 Advanced Fraud Intelligence & Case Management**: End-to-end investigation case lifecycle (`OPEN` $\to$ `IN_PROGRESS` $\to$ `ESCALATED` $\to$ `RESOLVED` $\to$ `CLOSED`), cryptographic evidence vault with SHA-256 integrity digests, unified multi-source chronological forensic timelines, syndicate alert correlation, and prescriptive next-step recommendations.
 
 ```
 Transaction Simulator
@@ -53,14 +54,17 @@ Cypher Detectors   Neo4j GDS Analytics
 (7 Detectors)      (PageRank, Louvain, WCC)
  └──────┬───────────┘
         ↓
- Risk Scoring Engine (Explainable 0–100)
+ Explainable Risk Engine (0–100 Scoring & Evidence)
+        ↓
+ Phase 11 Intelligence & Case Management Vault
+ (Cases, Chronological Timelines, Alert Correlation, Recommendations)
         ↓
  FastAPI REST & WebSocket Backend
         ↓
  ┌──────┴──────────────────┐
  ↓                         ↓
 React 18 + D3 Dashboard   Prometheus & Health Probes
-(JWT Auth & RBAC)         (/metrics, /live, /ready)
+(JWT Auth, RBAC & Cases)  (/metrics, /live, /ready)
 ```
 
 ---
@@ -77,6 +81,7 @@ React 18 + D3 Dashboard   Prometheus & Health Probes
 | **Backend API** | Python FastAPI, Uvicorn/Gunicorn, Pydantic v2, Neo4j Driver |
 | **Security & Auth** | RFC 7519 JWT (HS256), PBKDF2-HMAC-SHA256, Sliding-window IP Rate Limiting |
 | **Real-Time** | WebSockets (`/api/v1/ws`), In-memory Async EventBus Pub/Sub |
+| **Case & Evidence Vault** | SHA-256 Cryptographic Digests, State Machine Engine, Unified Timelines |
 | **Frontend UI** | React 18, TypeScript, D3.js Force Simulation, Tailwind CSS, Lucide Icons |
 | **Observability** | Prometheus Exporter (`/metrics`), Kubernetes Liveness/Readiness Probes |
 | **Infrastructure** | Multi-stage non-root Dockerfiles, Docker Compose, Nginx Reverse Proxy |
@@ -133,15 +138,15 @@ FinGraph enforces granular Role-Based Access Control:
 
 | Role | Permissions | Default Credentials |
 |---|---|---|
-| **`ADMIN`** | Full platform management, user administration, audit inspection, freeze accounts, mutate alerts. | Username: `admin`<br>Password: `admin_secret_pass_2026` |
-| **`INVESTIGATOR`** | Graph investigation, dossier triage, freeze accounts, resolve/suppress alerts, export reports. | Username: `investigator`<br>Password: `investigator_secret_pass_2026` |
-| **`ANALYST`** | Read-only graph navigation, search, dossier viewing, metrics exploration. | Username: `analyst`<br>Password: `analyst_secret_pass_2026` |
+| **`ADMIN`** | Full platform management, user administration, audit inspection, freeze accounts, mutate alerts, manage cases. | Username: `admin`<br>Password: `admin_secret_pass_2026` |
+| **`INVESTIGATOR`** | Graph investigation, dossier triage, freeze accounts, resolve/suppress alerts, create/manage cases, attach evidence. | Username: `investigator`<br>Password: `investigator_secret_pass_2026` |
+| **`ANALYST`** | Read-only graph navigation, search, dossier viewing, metrics exploration, view case timelines. | Username: `analyst`<br>Password: `analyst_secret_pass_2026` |
 
 ---
 
 ## 7. Production Deployment & Quickstart
 
-### Option A: Complete Production Stack with Docker Compose
+### Option A: Complete Hardened Production Cluster with Docker Compose
 ```bash
 # 1. Clone the repository
 git clone https://github.com/your-org/finGraph.git
@@ -155,45 +160,22 @@ docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 Access the services:
-- **Web Dashboard**: `http://localhost:80`
+- **Web Dashboard & Investigation Workspace**: `http://localhost:80`
 - **Backend API & Swagger**: `http://localhost:8000/docs`
 - **Prometheus Telemetry**: `http://localhost:9090`
 - **Neo4j Browser**: `http://localhost:7474`
-
-### Option B: Local Development
-```bash
-# 1. Launch Kafka & Neo4j
-docker compose up -d kafka neo4j
-
-# 2. Seed Neo4j schema & initial dataset
-python neo4j/scripts/init_schema.py
-python neo4j/scripts/seed.py
-
-# 3. Run Backend API
-pip install -r requirements.txt
-uvicorn backend.app.main:app --reload --port 8000
-
-# 4. Run Frontend Dashboard
-cd dashboard
-npm install
-npm start
-
-# 5. Run Synthetic Transaction Simulator
-cd ..
-python simulator/src/simulator.py --rate 10 --suspicious-rate 0.25 --duration 60 --output kafka
-```
 
 ---
 
 ## 8. Verification & Test Suite
 
-Run the full automated test suite covering all 10 phases:
+Run the full automated test suite covering all 11 phases:
 
 ```bash
-python -m pytest simulator/tests/ tests/neo4j/ tests/flink/ tests/detection/ tests/analytics/ tests/api/ tests/realtime/ tests/security/ -v
+python -m pytest simulator/tests/ tests/ -v
 ```
 
-**Test Suite Result: 125 Passed, 1 Skipped, 0 Failures** (100% Passing).
+**Test Suite Result: 144 Passed, 2 Skipped, 0 Failures** (100% Passing).
 
 ---
 

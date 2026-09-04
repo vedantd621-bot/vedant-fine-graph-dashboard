@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   ShieldAlert,
@@ -8,10 +8,23 @@ import {
   ExternalLink,
   DollarSign,
   Users,
+  Compass,
+  AlertTriangle,
+  Layers,
+  Sparkles,
+  Lock,
 } from 'lucide-react';
 import { apiClient } from '../api/client';
-import { AlertDetail, AlertStatus, GraphPayload } from '../types';
+import {
+  AlertCorrelation,
+  AlertDetail,
+  AlertRecommendationsResponse,
+  AlertStatus,
+  GraphPayload,
+  InvestigationTimelineEvent,
+} from '../types';
 import { InteractiveGraph } from '../components/graph/InteractiveGraph';
+import { TimelineView } from '../components/investigation/TimelineView';
 import { useAuth } from '../auth/AuthContext';
 
 interface AlertDetailPageProps {
@@ -27,8 +40,12 @@ export const AlertDetailPage: React.FC<AlertDetailPageProps> = ({
 }) => {
   const { hasRole } = useAuth();
   const canMutate = hasRole(['INVESTIGATOR', 'ADMIN']);
+
   const [alert, setAlert] = useState<AlertDetail | null>(null);
   const [graphData, setGraphData] = useState<GraphPayload | null>(null);
+  const [correlated, setCorrelated] = useState<AlertCorrelation | null>(null);
+  const [recommendations, setRecommendations] = useState<AlertRecommendationsResponse | null>(null);
+  const [timelineEvents, setTimelineEvents] = useState<InvestigationTimelineEvent[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [updating, setUpdating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +55,18 @@ export const AlertDetailPage: React.FC<AlertDetailPageProps> = ({
       setLoading(true);
       const data = await apiClient.getAlertDetail(alertId);
       setAlert(data);
+
       if (data.primary_account) {
-        const gData = await apiClient.getAccountGraph(data.primary_account, 2);
-        setGraphData(gData);
+        const [gData, corr, recs, tl] = await Promise.all([
+          apiClient.getAccountGraph(data.primary_account, 2).catch(() => null),
+          apiClient.getCorrelatedAlerts(alertId).catch(() => null),
+          apiClient.getAlertRecommendations(alertId).catch(() => null),
+          apiClient.getEntityTimeline(data.primary_account).catch(() => ({ events: [] })),
+        ]);
+        if (gData) setGraphData(gData);
+        if (corr) setCorrelated(corr);
+        if (recs) setRecommendations(recs);
+        if (tl && tl.events) setTimelineEvents(tl.events);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load alert details.');
@@ -189,20 +215,65 @@ export const AlertDetailPage: React.FC<AlertDetailPageProps> = ({
           </div>
         </div>
 
-        {/* Explainable Reasons */}
-        {alert.reasons && alert.reasons.length > 0 && (
-          <div className="space-y-1.5 pt-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Risk Justifications
+        {/* Recommended Investigation Actions */}
+        {recommendations && recommendations.recommendations.length > 0 && (
+          <div className="p-4 rounded-lg bg-indigo-950/30 border border-indigo-500/30 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-400">
+              <Sparkles className="h-4 w-4" />
+              Recommended Investigation Actions
             </div>
-            <ul className="space-y-1 text-xs text-slate-300">
-              {alert.reasons.map((rsn, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="text-cyan-400">•</span>
-                  <span>{rsn}</span>
-                </li>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              {recommendations.recommendations.map((rec, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-slate-200">{rec.title}</span>
+                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                      {rec.priority}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400">{rec.description}</p>
+                  <div className="text-[11px] text-slate-500 font-mono pt-1">
+                    Evidence: {rec.evidence_summary}
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Correlated Syndicate Alerts */}
+        {correlated && correlated.correlated_alerts.length > 0 && (
+          <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+                <Layers className="h-4 w-4" />
+                Correlated Syndicate Alerts ({correlated.correlated_alerts.length})
+              </div>
+              <span className="text-xs font-mono text-slate-400">
+                Correlation: {(correlated.correlation_strength * 100).toFixed(0)}%
+              </span>
+            </div>
+            <p className="text-xs text-slate-400">{correlated.correlation_reason}</p>
+            <div className="space-y-1.5 pt-1">
+              {correlated.correlated_alerts.map((ca) => (
+                <div
+                  key={ca.alert_id}
+                  className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-cyan-400">{ca.alert_id}</span>
+                    <span className="text-slate-300">({ca.detection_type})</span>
+                    <span className="text-slate-400 font-mono">Account: {ca.primary_account}</span>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                    {ca.status}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -258,9 +329,17 @@ export const AlertDetailPage: React.FC<AlertDetailPageProps> = ({
             data={graphData}
             focalAccountId={alert.primary_account}
             onSelectNode={onSelectAccount}
-            height={480}
+            height={440}
           />
         </div>
+      )}
+
+      {/* Primary Account Forensic Timeline */}
+      {timelineEvents.length > 0 && (
+        <TimelineView
+          events={timelineEvents}
+          title={`Forensic Event Timeline for Primary Account ${alert.primary_account}`}
+        />
       )}
     </div>
   );

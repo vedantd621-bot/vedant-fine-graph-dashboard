@@ -1,4 +1,4 @@
-﻿# FinGraph Development Status & Milestones
+# FinGraph Development Status & Milestones
 
 | Phase | Description | Status | Test Coverage | Verification |
 |---|---|---|---|---|
@@ -12,6 +12,7 @@
 | **Phase 8** | **Investigation API + React Dashboard** | 🟢 **Completed** | 103 Tests Passed | Validated |
 | **Phase 9** | **Real-Time Alerting + Live Stream Updates** | 🟢 **Completed** | 116 Tests Passed | Validated |
 | **Phase 10** | **Production Hardening, Security, Observability & Deployment** | 🟢 **Completed** | 125 Tests Passed | Validated |
+| **Phase 11** | **Advanced Fraud Intelligence & Case Management** | 🟢 **Completed** | 144 Tests Passed | Validated |
 
 ---
 
@@ -62,7 +63,12 @@
   - `backend/app/middleware/`: Correlation Request ID (`X-Request-ID`), Security headers (`CSP`, `X-Frame-Options`, `X-Content-Type-Options`), Sliding-window IP rate limiter (120 req/min general, 20 req/min login), and 2MB request body size limiter.
   - `backend/app/metrics/` & `routes/metrics.py`: Prometheus exporter on `GET /metrics` tracking HTTP latency, WebSocket connections, Neo4j queries, Kafka events, and alerts created.
   - `backend/app/routes/health.py`: Full Kubernetes health probes (`/health`, `/live`, `/ready`, `/health/neo4j`, `/health/kafka`, `/health/realtime`).
-  - `dashboard/src/auth/` & `components/layout/Navbar.tsx`: React Auth context, Login page with 1-click persona quick-fills, ErrorBoundary, Bearer token interceptor, and role-gated UI actions (freeze account / alert transition restricted for `ANALYST`).
+  - `dashboard/src/auth/` & `components/layout/Navbar.tsx`: React Auth context, Login page with 1-click persona quick-fills, ErrorBoundary, Bearer token interceptor, and role-gated UI actions.
   - Containers & Orchestration: Multi-stage non-root `Dockerfile.backend`, `Dockerfile.frontend`, `nginx/nginx.conf`, `nginx/default.conf`, `docker-compose.prod.yml`, `prometheus.yml`, `.env.production.example`, `deploy.sh`, `deploy.ps1`.
   - Operational Runbooks: `docs/security/security.md`, `docs/operations/runbook.md`, `docs/operations/disaster-recovery.md`, `docs/operations/production-readiness.md`, `docs/deployment/production.md`.
-  - **125 passed, 1 skipped (0 failures)** repository-wide.
+- **Phase 11**:
+  - `backend/app/models/cases.py` & `intelligence.py`: Comprehensive models for Case Management (`InvestigationCase`, `CaseStatus`, `CasePriority`), Cryptographic Evidence (`EvidenceItem` with SHA-256 `integrity_hash`), Multi-dimensional `EntityRiskProfile`, `ExplainableRiskFactor`, `InvestigationTimelineEvent`, `AlertCorrelation`, and `AlertRecommendationItem`.
+  - `backend/app/services/case_service.py` & `intelligence_service.py`: Thread-safe case repository, cryptographic evidence vault, multi-source forensic timeline aggregator, syndicate alert correlation, next-best-action recommendation generator, and bounded graph neighborhood explorer.
+  - `backend/app/routes/cases.py`, `intelligence.py`, `graph.py`: 18 REST endpoints covering case lifecycle mutations, investigator assignment, note threads, evidence hashing, entity risk dossiers, alert correlation, and common counterparties.
+  - `dashboard/src/pages/CasesPage.tsx`, `components/investigation/TimelineView.tsx`: Full React investigation workspace with status transition controls, note appending, cryptographic evidence viewer, and embedded timelines on Account and Alert detail pages.
+  - **144 passed, 2 skipped (0 failures)** repository-wide with sub-10ms average endpoint latencies.

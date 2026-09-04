@@ -1,6 +1,6 @@
-"""
+﻿"""
 FinGraph Real-Time Event Envelope & Strongly Typed Payloads.
-Ensures uniform JSON serialization for WebSocket broadcast events.
+Ensures uniform JSON serialization for WebSocket broadcast events across alerts, risk, transactions, and cases.
 """
 from datetime import datetime, timezone
 from enum import Enum
@@ -19,6 +19,10 @@ class EventType(str, Enum):
     RISK_UPDATED = "risk.updated"
     TRANSACTION_CREATED = "transaction.created"
     GRAPH_UPDATED = "graph.updated"
+    CASE_CREATED = "case.created"
+    CASE_UPDATED = "case.updated"
+    INVESTIGATION_UPDATED = "investigation.updated"
+    ACCOUNT_FROZEN = "account.frozen"
     SYSTEM_PING = "system.ping"
     SYSTEM_PONG = "system.pong"
     ERROR = "error"
@@ -99,6 +103,45 @@ class GraphUpdatedPayload(BaseModel):
     account_id: str
     change_type: str = "TRANSACTION_ADDED"  # "TRANSACTION_ADDED", "ACCOUNT_FROZEN", "COMMUNITY_CHANGED"
     related_account_id: Optional[str] = None
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CaseCreatedPayload(BaseModel):
+    """Payload emitted when a new investigation case is opened."""
+    case_id: str
+    title: str
+    priority: str
+    status: str
+    assigned_investigator: Optional[str] = None
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class CaseUpdatedPayload(BaseModel):
+    """Payload emitted when a case's status, assignment, or notes are modified."""
+    case_id: str
+    status: str
+    priority: str
+    assigned_investigator: Optional[str] = None
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    action: str = "UPDATE"
+
+
+class InvestigationUpdatedPayload(BaseModel):
+    """Payload emitted when evidence or notes are attached to an active investigation."""
+    case_id: str
+    update_type: str  # "NOTE_ADDED", "EVIDENCE_ATTACHED", "ALERT_LINKED", "ACCOUNT_LINKED"
+    author: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    detail: Optional[str] = None
+
+
+class AccountFrozenPayload(BaseModel):
+    """Payload emitted when an account's freeze state is toggled."""
+    account_id: str
+    is_frozen: bool
+    actor: str
+    reason: Optional[str] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

@@ -1,9 +1,10 @@
-"""
+﻿"""
 FinGraph Graph Visualization Business Service.
-Extracts bounded local subgraph neighborhoods for interactive network forensics.
+Extracts bounded local subgraph neighborhoods, suspicious sub-networks,
+and common counterparty intersections for interactive network forensics.
 """
 from datetime import datetime
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from neo4j.src.client import Neo4jClient
 from analytics.src.models import RiskLevel
@@ -12,7 +13,7 @@ from backend.app.models.graph import GraphEdge, GraphNode, GraphPayload
 
 
 class GraphService:
-    """Service providing bounded graph visualization payloads."""
+    """Service providing bounded graph visualization payloads and counterparty analysis."""
 
     def __init__(self, client: Neo4jClient, risk_engine: ExplainableRiskEngine):
         self.client = client
@@ -29,10 +30,8 @@ class GraphService:
         Retrieves a bounded local neighborhood subgraph centered on the focal account.
         Includes counterparties, owners, and host banks.
         """
-        # Clamp depth safely between 1 and 3
         safe_depth = max(1, min(3, depth))
 
-        # Query Account transaction neighborhood
         cypher_transfers = f"""
         MATCH path = (root:Account {{account_id: $account_id}})-[r:TRANSFERRED_TO*1..{safe_depth}]-(neighbor:Account)
         UNWIND relationships(path) AS rel
@@ -51,7 +50,6 @@ class GraphService:
             {"account_id": account_id, "max_edges": max_edges},
         )
 
-        # Collect unique account IDs
         account_ids: Set[str] = {account_id}
         edges: List[GraphEdge] = []
 
@@ -83,7 +81,6 @@ class GraphService:
                 )
             )
 
-        # Query metadata for involved accounts (owners and banks)
         cypher_meta = """
         MATCH (a:Account)
         WHERE a.account_id IN $account_ids
@@ -126,7 +123,6 @@ class GraphService:
                     },
                 )
 
-            # Add Owner Person node if present
             owner_id = m.get("owner_id")
             if owner_id and owner_id not in nodes_map and len(nodes_map) < max_nodes:
                 nodes_map[owner_id] = GraphNode(
@@ -144,7 +140,6 @@ class GraphService:
                     )
                 )
 
-            # Add Bank node if present
             bank_id = m.get("bank_id")
             if bank_id and bank_id not in nodes_map and len(nodes_map) < max_nodes:
                 nodes_map[bank_id] = GraphNode(
@@ -162,7 +157,6 @@ class GraphService:
                     )
                 )
 
-        # Fallback if root account has no transactions
         if account_id not in nodes_map:
             nodes_map[account_id] = GraphNode(
                 id=account_id,
@@ -183,3 +177,53 @@ class GraphService:
             total_nodes=len(nodes),
             total_edges=len(edges),
         )
+
+    def get_suspicious_neighborhood(
+        self,
+        account_id: str,
+        min_risk: float = 60.0,
+        max_hops: int = 2,
+    ) -> GraphPayload:
+        """Retrieves subgraph filtered to only counterparties exceeding the risk threshold."""
+        full_subgraph = self.get_account_subgraph(account_id=account_id, depth=max_hops)
+        # Filter nodes where risk_score >= min_risk or is the focal account
+        suspicious_nodes = [
+            n for n in full_subgraph.nodes
+            if n.id == account_id or (n.risk_score is not None and n.risk_score >= min_risk) or n.type in {"Person", "Bank"}
+        ]
+        suspicious_ids = set(n.id for n in suspicious_nodes)
+        suspicious_edges = [
+            e for e in full_subgraph.edges
+            if e.source in suspicious_ids and e.target in suspicious_ids
+        ]
+
+        return GraphPayload(
+            focal_account_id=account_id,
+            nodes=suspicious_nodes,
+            edges=suspicious_edges,
+            is_truncated=full_subgraph.is_truncated,
+            total_nodes=len(suspicious_nodes),
+            total_edges=len(suspicious_edges),
+        )
+
+    def get_common_counterparties(
+        self,
+        account_a: str,
+        account_b: str,
+    ) -> List[Dict[str, Any]]:
+        """Finds common direct or indirect transaction counterparties connecting two accounts."""
+        cypher = """
+        MATCH (a:Account {account_id: $acc_a})-[r1:TRANSFERRED_TO]-(common:Account)-[r2:TRANSFERRED_TO]-(b:Account {account_id: $acc_b})
+        WHERE a <> b AND common <> a AND common <> b
+        RETURN DISTINCT
+            common.account_id AS common_account_id,
+            common.risk_score AS risk_score,
+            common.risk_level AS risk_level,
+            r1.transaction_id AS tx_with_a,
+            r1.amount AS amount_with_a,
+            r2.transaction_id AS tx_with_b,
+            r2.amount AS amount_with_b
+        LIMIT 50
+        """
+        records = self.client.execute_query(cypher, {"acc_a": account_a, "acc_b": account_b})
+        return records

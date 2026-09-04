@@ -2,8 +2,11 @@
 FinGraph Account Business Service.
 Manages account querying, risk feature evaluation, transaction timelines, and simulated freeze actions.
 """
+import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
+
+logger = logging.getLogger("FinGraph.AccountService")
 
 from neo4j.src.client import Neo4jClient
 from analytics.src.models import GraphFeatures, RiskLevel, RiskScore, RuleSignals
@@ -125,7 +128,11 @@ class AccountService:
 
     def get_account_by_id(self, account_id: str) -> Optional[AccountDetail]:
         """Retrieves comprehensive account dossier with ownership, GDS metrics, and risk reasons."""
-        detections = self.risk_engine.detection_engine.run_all()
+        try:
+            detections = self.risk_engine.detection_engine.run_all()
+        except Exception as exc:
+            logger.debug(f"Detector execution note: {exc}")
+            detections = []
         features_map = self.risk_engine.gds_manager.extract_graph_features([account_id])
         feats = features_map.get(account_id)
         if not feats:

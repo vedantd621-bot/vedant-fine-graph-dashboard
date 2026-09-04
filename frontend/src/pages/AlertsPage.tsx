@@ -42,7 +42,6 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onSelectAlert }) => {
     fetchAlerts();
   }, [severityFilter, statusFilter, page]);
 
-  // Real-Time Event Handlers
   useEffect(() => {
     const unsubAlertCreated = realtimeClient.on('alert.created', (evt) => {
       const data: AlertCreatedData = evt.data;
@@ -99,7 +98,6 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onSelectAlert }) => {
         </div>
       </div>
 
-      {/* Filters & Search Bar */}
       <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-slate-900 border border-slate-800">
         <div className="flex-1 min-w-[200px] relative">
           <Search className="h-4 w-4 absolute left-3 top-2.5 text-slate-400" />
@@ -112,7 +110,6 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onSelectAlert }) => {
           />
         </div>
 
-        {/* Severity Filter */}
         <select
           value={severityFilter}
           onChange={(e) => {
@@ -128,7 +125,6 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onSelectAlert }) => {
           <option value="LOW">Low</option>
         </select>
 
-        {/* Status Filter */}
         <select
           value={statusFilter}
           onChange={(e) => {
@@ -145,7 +141,6 @@ export const AlertsPage: React.FC<AlertsPageProps> = ({ onSelectAlert }) => {
         </select>
       </div>
 
-      {/* Alerts Table */}
       <div className="rounded-xl bg-slate-900 border border-slate-800 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">

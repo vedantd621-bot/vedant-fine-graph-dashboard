@@ -19,7 +19,6 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
   return (
     <div className="relative">
-      {/* Bell Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 transition-colors"
@@ -33,10 +32,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
         )}
       </button>
 
-      {/* Dropdown Panel */}
       {isOpen && (
         <div className="absolute right-0 mt-2 w-96 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl z-50 overflow-hidden text-xs">
-          {/* Panel Header */}
           <div className="p-3.5 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="font-bold text-slate-100">Live Investigation Stream</span>
@@ -65,7 +62,6 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             </button>
           </div>
 
-          {/* Subheader Tabs & Clear */}
           <div className="px-3 pt-2 pb-1 bg-slate-900 flex items-center justify-between border-b border-slate-800">
             <div className="flex gap-2">
               <button
@@ -100,7 +96,6 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             )}
           </div>
 
-          {/* List Content */}
           <div className="max-h-80 overflow-y-auto divide-y divide-slate-800/60 p-1">
             {activeTab === 'alerts' ? (
               notifications.length === 0 ? (

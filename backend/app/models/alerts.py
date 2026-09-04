@@ -17,6 +17,7 @@ class AlertSummary(BaseModel):
     severity: Severity
     confidence: float
     primary_account: str
+    related_accounts: List[str] = Field(default_factory=list)
     risk_score: Optional[float] = None
     risk_level: Optional[RiskLevel] = None
     created_at: datetime

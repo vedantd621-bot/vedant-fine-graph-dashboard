@@ -20,7 +20,6 @@ export class FinGraphWebSocketClient {
     if (customUrl) {
       this.url = customUrl;
     } else {
-      // Derive from environment or API URL
       const apiBase =
         (typeof process !== 'undefined' && process.env?.REACT_APP_API_BASE_URL) ||
         (typeof window !== 'undefined' && (window as any).__ENV__?.REACT_APP_API_BASE_URL) ||
@@ -32,21 +31,27 @@ export class FinGraphWebSocketClient {
     }
   }
 
-  public connect(): void {
+  public connect(tokenOverride?: string): void {
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
 
+    const token = tokenOverride || localStorage.getItem('fingraph_token');
+    if (!token) {
+      this.setStatus('DISCONNECTED');
+      return;
+    }
+
+    const wsUrl = `${this.url}?token=${encodeURIComponent(token)}`;
     this.shouldReconnect = true;
     this.setStatus('CONNECTING');
 
     try {
-      this.ws = new WebSocket(this.url);
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         this.setStatus('LIVE');
         this.reconnectAttempts = 0;
-        // Subscribe to all channels by default
         this.send({ action: 'subscribe', channels: ['alerts', 'risk', 'transactions', 'graph'] });
       };
 
@@ -130,31 +135,26 @@ export class FinGraphWebSocketClient {
   }
 
   private handleIncomingEvent(event: RealtimeEvent): void {
-    // 1. Deduplicate by event_id
     if (event.event_id && this.processedEventIds.has(event.event_id)) {
       return;
     }
     if (event.event_id) {
       this.processedEventIds.add(event.event_id);
       if (this.processedEventIds.size > this.maxEventIdCache) {
-        // Prune oldest
         const first = this.processedEventIds.values().next().value;
         if (first) this.processedEventIds.delete(first);
       }
     }
 
-    // 2. Respond to system.ping heartbeat automatically
     if (event.event === 'system.ping') {
       this.send({ action: 'ping' });
     }
 
-    // 3. Dispatch to specific listeners
     const specific = this.eventHandlers.get(event.event);
     if (specific) {
       specific.forEach((h) => h(event));
     }
 
-    // 4. Dispatch to wildcard listeners
     const wildcard = this.eventHandlers.get('*');
     if (wildcard) {
       wildcard.forEach((h) => h(event));
@@ -166,7 +166,6 @@ export class FinGraphWebSocketClient {
       clearTimeout(this.reconnectTimeoutId);
     }
 
-    // Exponential backoff: 1s, 2s, 4s, 8s, ... max 30s with 10% jitter
     const baseDelay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), this.maxReconnectDelay);
     const jitter = baseDelay * (0.9 + Math.random() * 0.2);
     this.reconnectAttempts++;
@@ -177,5 +176,4 @@ export class FinGraphWebSocketClient {
   }
 }
 
-// Global Singleton Client
 export const realtimeClient = new FinGraphWebSocketClient();

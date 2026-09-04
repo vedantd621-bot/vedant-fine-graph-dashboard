@@ -23,15 +23,12 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [lastEventTime, setLastEventTime] = useState<Date | null>(null);
 
   useEffect(() => {
-    // 1. Subscribe to status changes
     const unsubStatus = realtimeClient.onStatusChange((newStatus) => {
       setStatus(newStatus);
     });
 
-    // 2. Connect client
     realtimeClient.connect();
 
-    // 3. Listen to all events for history logging
     const unsubAll = realtimeClient.on('*', (evt) => {
       setLastEventTime(new Date());
       if (evt.event !== 'system.ping' && evt.event !== 'system.pong') {
@@ -39,13 +36,11 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     });
 
-    // 4. Listen to alert.created for notifications & toasts
     const unsubAlert = realtimeClient.on('alert.created', (evt) => {
       const data: AlertCreatedData = evt.data;
       setNotifications((prev) => [data, ...prev.slice(0, 29)]);
       setActiveToast(data);
 
-      // Auto dismiss toast after 6 seconds
       setTimeout(() => {
         setActiveToast((current) => (current?.alert_id === data.alert_id ? null : current));
       }, 6000);

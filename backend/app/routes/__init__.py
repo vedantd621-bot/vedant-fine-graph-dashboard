@@ -1,4 +1,4 @@
-"""
+﻿"""
 FinGraph API Routes Package.
 """
 from backend.app.routes.health import router as health_router
@@ -11,6 +11,8 @@ from backend.app.routes.websocket import router as websocket_router
 from backend.app.routes.auth import router as auth_router
 from backend.app.routes.admin import router as admin_router
 from backend.app.routes.metrics import router as metrics_router
+from backend.app.routes.cases import router as cases_router
+from backend.app.routes.intelligence import router as intelligence_router
 
 __all__ = [
     "health_router",
@@ -23,4 +25,6 @@ __all__ = [
     "auth_router",
     "admin_router",
     "metrics_router",
+    "cases_router",
+    "intelligence_router",
 ]

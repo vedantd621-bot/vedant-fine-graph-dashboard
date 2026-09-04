@@ -4,8 +4,11 @@ Manages alert generation, filtering, forensic detail retrieval, and investigatio
 Emits real-time alert updates to the EventBus.
 """
 import asyncio
+import logging
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
+
+logger = logging.getLogger("FinGraph.AlertService")
 
 from neo4j.src.client import Neo4jClient
 from detection.src.engine import DetectionEngine
@@ -51,9 +54,13 @@ class AlertService:
         sort: str = "created_at",
         order: str = "desc",
     ) -> Tuple[List[AlertSummary], int]:
-        """Returns paginated, filterable list of active fraud alerts."""
-        detections = self.detection_engine.run_all()
-        generated_alerts = self.detection_engine.generate_alerts(detections)
+        try:
+            detections = self.detection_engine.run_all()
+            generated_alerts = self.detection_engine.generate_alerts(detections)
+        except Exception as exc:
+            logger.debug(f"Detector execution note in list_alerts: {exc}")
+            detections = []
+            generated_alerts = []
 
         # Preload risk scores for primary accounts
         primary_accs = list(set(a.primary_account for a in generated_alerts))
@@ -90,6 +97,7 @@ class AlertService:
                 severity=alt.severity,
                 confidence=alt.confidence,
                 primary_account=alt.primary_account,
+                related_accounts=alt.related_accounts,
                 risk_score=r_score_val,
                 risk_level=r_level_val,
                 created_at=alt.created_at,
@@ -118,9 +126,13 @@ class AlertService:
         return paginated, total_items
 
     def get_alert_by_id(self, alert_id: str) -> Optional[AlertDetail]:
-        """Retrieves comprehensive alert detail with evidence and reasons."""
-        detections = self.detection_engine.run_all()
-        generated_alerts = self.detection_engine.generate_alerts(detections)
+        try:
+            detections = self.detection_engine.run_all()
+            generated_alerts = self.detection_engine.generate_alerts(detections)
+        except Exception as exc:
+            logger.debug(f"Detector execution note in get_alert_by_id: {exc}")
+            detections = []
+            generated_alerts = []
 
         target_alert = next((a for a in generated_alerts if a.alert_id == alert_id), None)
         if not target_alert:

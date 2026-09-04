@@ -54,7 +54,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     fetchData();
   }, []);
 
-  // Real-Time Event Handlers
   useEffect(() => {
     const unsubAlertCreated = realtimeClient.on('alert.created', (evt) => {
       const data: AlertCreatedData = evt.data;
@@ -144,7 +143,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-100">
@@ -156,7 +154,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           title="Open Fraud Alerts"
@@ -188,13 +185,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         />
       </div>
 
-      {/* Risk Distribution & Top Risk Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
           <RiskDistributionChart distribution={riskDist} />
         </div>
 
-        {/* Top Risk Candidates Table */}
         <div className="lg:col-span-2 p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold tracking-tight text-slate-200">
@@ -259,7 +254,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </div>
 
-      {/* Recent Alerts Feed */}
       <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

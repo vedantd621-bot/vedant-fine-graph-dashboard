@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Snowflake,
@@ -9,12 +9,23 @@ import {
   Activity,
   CheckCircle,
   ExternalLink,
+  Sparkles,
+  Layers,
+  Clock,
 } from 'lucide-react';
 import { apiClient } from '../api/client';
-import { AccountDetail, AccountTransactionItem, GraphPayload } from '../types';
+import {
+  AccountDetail,
+  AccountTransactionItem,
+  EntityRiskProfile,
+  GraphPayload,
+  InvestigationTimelineEvent,
+} from '../types';
 import { InteractiveGraph } from '../components/graph/InteractiveGraph';
+import { TimelineView } from '../components/investigation/TimelineView';
 import { realtimeClient } from '../realtime/websocket';
 import { GraphUpdatedData, RiskUpdatedData, TransactionCreatedData } from '../types/realtime';
+import { useAuth } from '../auth/AuthContext';
 
 interface AccountDetailPageProps {
   accountId: string;
@@ -27,10 +38,16 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
   onBack,
   onSelectAccount,
 }) => {
+  const { hasRole } = useAuth();
+  const canFreeze = hasRole(['INVESTIGATOR', 'ADMIN']);
+
   const [account, setAccount] = useState<AccountDetail | null>(null);
+  const [riskProfile, setRiskProfile] = useState<EntityRiskProfile | null>(null);
+  const [timelineEvents, setTimelineEvents] = useState<InvestigationTimelineEvent[]>([]);
   const [transactions, setTransactions] = useState<AccountTransactionItem[]>([]);
   const [graphData, setGraphData] = useState<GraphPayload | null>(null);
   const [graphDepth, setGraphDepth] = useState<number>(2);
+  const [suspiciousOnly, setSuspiciousOnly] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [freezing, setFreezing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,14 +55,20 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
   const fetchAccountData = async () => {
     try {
       setLoading(true);
-      const [accRes, txRes, gRes] = await Promise.all([
+      const [accRes, txRes, gRes, profRes, tlRes] = await Promise.all([
         apiClient.getAccountDetail(accountId),
         apiClient.getAccountTransactions(accountId, { page: 1, page_size: 20 }),
-        apiClient.getAccountGraph(accountId, graphDepth),
+        suspiciousOnly
+          ? apiClient.getSuspiciousNeighborhood(accountId, 60.0)
+          : apiClient.getAccountGraph(accountId, graphDepth),
+        apiClient.getEntityRiskProfile(accountId).catch(() => null),
+        apiClient.getEntityTimeline(accountId).catch(() => ({ events: [] })),
       ]);
       setAccount(accRes);
       setTransactions(txRes.data);
       setGraphData(gRes);
+      if (profRes) setRiskProfile(profRes);
+      if (tlRes && tlRes.events) setTimelineEvents(tlRes.events);
     } catch (err: any) {
       setError(err.message || 'Failed to load account dossier.');
     } finally {
@@ -55,11 +78,9 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
 
   useEffect(() => {
     fetchAccountData();
-    // Register watch on this specific account
     realtimeClient.watchAccount(accountId);
-  }, [accountId, graphDepth]);
+  }, [accountId, graphDepth, suspiciousOnly]);
 
-  // Real-Time Event Handlers for this specific account
   useEffect(() => {
     const unsubRisk = realtimeClient.on('risk.updated', (evt) => {
       const data: RiskUpdatedData = evt.data;
@@ -82,7 +103,9 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
       const data: GraphUpdatedData = evt.data;
       if (data.account_id === accountId || data.related_account_id === accountId) {
         try {
-          const updatedGraph = await apiClient.getAccountGraph(accountId, graphDepth);
+          const updatedGraph = suspiciousOnly
+            ? await apiClient.getSuspiciousNeighborhood(accountId, 60.0)
+            : await apiClient.getAccountGraph(accountId, graphDepth);
           setGraphData(updatedGraph);
         } catch (e) {
           console.debug('Failed to live-refresh graph:', e);
@@ -114,13 +137,17 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
       unsubGraph();
       unsubTx();
     };
-  }, [accountId, graphDepth]);
+  }, [accountId, graphDepth, suspiciousOnly]);
 
   const handleToggleFreeze = async () => {
     if (!account) return;
     try {
       setFreezing(true);
-      const res = await apiClient.freezeAccount(accountId, !account.is_frozen, 'Simulated freeze from investigation dashboard');
+      const res = await apiClient.freezeAccount(
+        accountId,
+        !account.is_frozen,
+        'Simulated containment freeze from investigation dashboard'
+      );
       setAccount({ ...account, is_frozen: res.is_frozen });
     } catch (err: any) {
       alert(`Freeze action failed: ${err.message}`);
@@ -153,7 +180,6 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header & Freeze Action */}
       <div className="flex items-center justify-between">
         <button
           onClick={onBack}
@@ -163,20 +189,24 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
         </button>
 
         <button
-          disabled={freezing}
+          disabled={freezing || !canFreeze}
           onClick={handleToggleFreeze}
+          title={!canFreeze ? 'Account containment requires Investigator or Admin role' : undefined}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-            account.is_frozen
+            !canFreeze
+              ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'
+              : account.is_frozen
               ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
               : 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 border border-rose-500/30'
           }`}
         >
           <Snowflake className="h-4 w-4" />
           {account.is_frozen ? 'Unfreeze Account' : 'Simulate Account Freeze'}
+          {!canFreeze && <span className="text-[10px] font-normal text-slate-500">(Read-Only)</span>}
         </button>
       </div>
 
-      {/* Account Profile Dossier Card */}
+      {/* Account Banner Dossier */}
       <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -218,7 +248,7 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
           </div>
         </div>
 
-        {/* GDS Graph Metrics Grid */}
+        {/* Graph Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
           <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
             <span className="text-slate-400">PageRank Centrality</span>
@@ -244,57 +274,95 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
           </div>
         </div>
 
-        {/* Explainable Reasons */}
-        <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Why is this account flagged with elevated risk?
+        {/* Explainable Risk Factors Breakdown */}
+        {riskProfile && riskProfile.major_risk_factors.length > 0 && (
+          <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400">
+              <Sparkles className="h-4 w-4" />
+              Ranked Risk Factors & Topological Evidence
+            </div>
+            <div className="space-y-2 pt-1">
+              {riskProfile.major_risk_factors.map((rf, idx) => (
+                <div key={idx} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-start justify-between gap-3 text-xs">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-200">{rf.factor_type.replace('_', ' ')}</span>
+                      {rf.evidence_reference && (
+                        <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded">
+                          {rf.evidence_reference}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-slate-400 text-[11px]">{rf.description}</p>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300 shrink-0">
+                    Weight: {rf.weight.toFixed(1)}x
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-          <ul className="space-y-1.5 text-xs text-slate-300">
-            {account.risk_reasons.map((rsn, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="text-cyan-400 font-bold">•</span>
-                <span>{rsn}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        )}
       </div>
 
-      {/* Subgraph Neighborhood */}
+      {/* Interactive Subgraph Neighborhood */}
       {graphData && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-200">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <Layers className="h-4 w-4 text-cyan-400" />
               Interactive Subgraph Neighborhood ({account.account_id})
             </h3>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-400">Depth:</span>
+            <div className="flex items-center gap-3 text-xs">
               <button
-                onClick={() => setGraphDepth(1)}
-                className={`px-2 py-0.5 rounded ${graphDepth === 1 ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300'}`}
+                onClick={() => setSuspiciousOnly(!suspiciousOnly)}
+                className={`px-2.5 py-1 rounded-lg border text-xs font-semibold transition-colors ${
+                  suspiciousOnly
+                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                    : 'bg-slate-800 text-slate-400 border-slate-700'
+                }`}
               >
-                1 Hop
+                {suspiciousOnly ? 'Showing Suspicious Only' : 'Filter Suspicious'}
               </button>
-              <button
-                onClick={() => setGraphDepth(2)}
-                className={`px-2 py-0.5 rounded ${graphDepth === 2 ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300'}`}
-              >
-                2 Hops
-              </button>
+
+              <div className="flex items-center gap-1">
+                <span className="text-slate-400">Depth:</span>
+                <button
+                  onClick={() => setGraphDepth(1)}
+                  className={`px-2 py-0.5 rounded ${graphDepth === 1 ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300'}`}
+                >
+                  1 Hop
+                </button>
+                <button
+                  onClick={() => setGraphDepth(2)}
+                  className={`px-2 py-0.5 rounded ${graphDepth === 2 ? 'bg-cyan-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300'}`}
+                >
+                  2 Hops
+                </button>
+              </div>
             </div>
           </div>
           <InteractiveGraph
             data={graphData}
             focalAccountId={account.account_id}
             onSelectNode={onSelectAccount}
-            height={450}
+            height={440}
           />
         </div>
       )}
 
-      {/* Transaction History Timeline */}
+      {/* Forensic Timeline */}
+      {timelineEvents.length > 0 && (
+        <TimelineView
+          events={timelineEvents}
+          title={`Forensic Event Timeline for ${account.account_id}`}
+        />
+      )}
+
+      {/* Settled Transactions Table */}
       <div className="p-5 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-3">
-        <h3 className="text-sm font-bold tracking-tight text-slate-200">
+        <h3 className="text-sm font-bold tracking-tight text-slate-200 flex items-center gap-2">
+          <Activity className="h-4 w-4 text-cyan-400" />
           Settled Transaction Timeline ({transactions.length})
         </h3>
         <div className="overflow-x-auto">

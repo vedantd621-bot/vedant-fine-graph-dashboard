@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { DashboardPage } from './pages/DashboardPage';
@@ -6,6 +6,7 @@ import { AlertsPage } from './pages/AlertsPage';
 import { AlertDetailPage } from './pages/AlertDetailPage';
 import { AccountsPage } from './pages/AccountsPage';
 import { AccountDetailPage } from './pages/AccountDetailPage';
+import { CasesPage } from './pages/CasesPage';
 import { InvestigationPage } from './pages/InvestigationPage';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { LoginPage } from './auth/LoginPage';
@@ -66,7 +67,13 @@ export const AppContent: React.FC = () => {
 
         <div className="flex-1 flex overflow-hidden">
           <Sidebar
-            activeTab={activeTab.startsWith('account') ? 'accounts' : activeTab.startsWith('alert') ? 'alerts' : activeTab}
+            activeTab={
+              activeTab.startsWith('account')
+                ? 'accounts'
+                : activeTab.startsWith('alert')
+                ? 'alerts'
+                : activeTab
+            }
             setActiveTab={setActiveTab}
           />
 
@@ -100,6 +107,13 @@ export const AppContent: React.FC = () => {
                 accountId={selectedAccountId}
                 onBack={() => setActiveTab('accounts')}
                 onSelectAccount={handleSelectAccount}
+              />
+            )}
+
+            {activeTab === 'cases' && (
+              <CasesPage
+                onSelectAccount={handleSelectAccount}
+                onSelectAlert={handleSelectAlert}
               />
             )}
 

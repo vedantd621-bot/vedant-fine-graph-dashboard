@@ -1,12 +1,10 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   LayoutDashboard,
   AlertTriangle,
   Users,
   Compass,
-  GitFork,
-  Activity,
-  Sliders,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -24,7 +22,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Executive Overview', icon: LayoutDashboard },
     { id: 'alerts', label: 'Alerts Catalog', icon: AlertTriangle, badge: openAlertsCount },
     { id: 'accounts', label: 'Account Dossiers', icon: Users },
-    { id: 'investigation', label: 'Forensic Investigation', icon: Compass },
+    { id: 'cases', label: 'Investigation Cases', icon: ShieldAlert },
+    { id: 'investigation', label: 'Forensic Tools', icon: Compass },
   ];
 
   return (
