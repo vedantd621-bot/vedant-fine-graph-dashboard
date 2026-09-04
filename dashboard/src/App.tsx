@@ -21,6 +21,9 @@ import { EarlyWarningPage } from './pages/EarlyWarningPage';
 import { PatternIntelligencePage } from './pages/PatternIntelligencePage';
 import { AdaptiveIntelligencePage } from './pages/AdaptiveIntelligencePage';
 import { ThreatPropagationPage } from './pages/ThreatPropagationPage';
+import { InvestigationIntelligencePage } from './pages/InvestigationIntelligencePage';
+import { AlertCorrelationPage } from './pages/AlertCorrelationPage';
+import { TaskManagementPage } from './pages/TaskManagementPage';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { LoginPage } from './auth/LoginPage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -129,6 +132,12 @@ export const AppContent: React.FC = () => {
             {activeTab === 'adaptive-intelligence' && <AdaptiveIntelligencePage />}
 
             {activeTab === 'threat-propagation' && <ThreatPropagationPage />}
+
+            {activeTab === 'investigation-intelligence' && <InvestigationIntelligencePage />}
+
+            {activeTab === 'alert-correlation' && <AlertCorrelationPage />}
+
+            {activeTab === 'task-management' && <TaskManagementPage />}
 
             {activeTab === 'campaign-detail' && selectedCampaignId && (
               <FraudCampaignDetailPage

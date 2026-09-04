@@ -319,3 +319,9 @@ def get_threat_propagation_service() -> "ThreatPropagationService":
     """Returns singleton ThreatPropagationService."""
     from backend.app.threat_propagation.service import get_threat_propagation_service as _get_tps
     return _get_tps()
+
+
+def get_intelligence_orchestration_service() -> "IntelligenceOrchestrationService":
+    """Returns singleton IntelligenceOrchestrationService."""
+    from backend.app.intelligence_orchestration.service import get_intelligence_orchestration_service as _get_ios
+    return _get_ios()

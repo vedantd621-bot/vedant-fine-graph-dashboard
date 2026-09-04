@@ -214,3 +214,12 @@ python -m pytest simulator/tests/ tests/ -v
 - **Shadow Simulation**: Non-destructive evaluation of candidate detector rules against historical telemetry.
 - **Risk Calibration**: 5-bucket empirical outcome matrix vs investigation verdicts.
 - **Threat Propagation**: Multi-hop contagion explorer with 6-factor deterministic index and topology visualizer.
+
+### Phase 19: Enterprise Intelligence Orchestration & Investigation Automation
+* **Central Intelligence Orchestrator**: Unified facade coordinating detection, risk, networks, evolution, early warnings, and threat propagation.
+* **Multi-Signal Alert Correlation**: Explainable linking via shared accounts, devices, proxy subnets, and temporal proximity.
+* **Investigation Priority Engine**: 6-factor deterministic priority scoring ($0–100$) and priority bands (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`).
+* **Evidence Tier Ranking**: `STRONG`, `MODERATE`, `WEAK` forensic dossiers with provenance.
+* **Automated Investigation Briefs**: Multi-layer dossier synthesis with open questions and "NOT AVAILABLE" fallbacks.
+* **Investigation Workflow State Machine**: Validated state progression and case checklists.
+* **Investigation Workstations**: React pages for Case Intelligence, Alert Correlation, and Task Management.

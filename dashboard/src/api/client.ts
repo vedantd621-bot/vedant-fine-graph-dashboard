@@ -637,4 +637,87 @@ export const apiClient = {
     return res.data;
   },
 
+
+  // Phase 19: Intelligence Orchestration & Investigation Automation
+  getAlertCorrelation: async (alertId: string) => {
+    const res = await api.get<ApiResponse<CorrelationGroup>>(`/api/v1/orchestration/correlations/${alertId}`);
+    return res.data;
+  },
+  calculateInvestigationPriority: async (req: any) => {
+    const res = await api.post<ApiResponse<InvestigationPriorityScore>>('/api/v1/orchestration/priority/calculate', req);
+    return res.data;
+  },
+  getRankedEvidence: async (caseId: string) => {
+    const res = await api.get<ApiResponse<RankedEvidenceItem[]>>(`/api/v1/orchestration/evidence/${caseId}`);
+    return res.data;
+  },
+  getInvestigationBrief: async (caseOrAlertId: string) => {
+    const res = await api.get<ApiResponse<InvestigationBrief>>(`/api/v1/orchestration/brief/${caseOrAlertId}`);
+    return res.data;
+  },
+  generateInvestigationBrief: async (req: { case_or_alert_id: string; force_refresh?: boolean }) => {
+    const res = await api.post<ApiResponse<InvestigationBrief>>('/api/v1/orchestration/brief/generate', req);
+    return res.data;
+  },
+  listWorkflowTemplates: async () => {
+    const res = await api.get<ApiResponse<InvestigationWorkflowTemplate[]>>('/api/v1/orchestration/templates');
+    return res.data;
+  },
+  getWorkflowTemplate: async (templateId: string) => {
+    const res = await api.get<ApiResponse<InvestigationWorkflowTemplate>>(`/api/v1/orchestration/templates/${templateId}`);
+    return res.data;
+  },
+  transitionCaseWorkflowState: async (caseId: string, req: { to_state: string; notes?: string }) => {
+    const res = await api.post<ApiResponse<WorkflowState>>(`/api/v1/orchestration/cases/${caseId}/workflow-state`, req);
+    return res.data;
+  },
+  getCaseWorkflowState: async (caseId: string) => {
+    const res = await api.get<ApiResponse<WorkflowState>>(`/api/v1/orchestration/cases/${caseId}/workflow-state`);
+    return res.data;
+  },
+  listInvestigationTasks: async (params?: { case_id?: string; assignee?: string; status?: string }) => {
+    const res = await api.get<ApiResponse<InvestigationTask[]>>('/api/v1/orchestration/tasks', { params });
+    return res.data;
+  },
+  createInvestigationTask: async (req: any) => {
+    const res = await api.post<ApiResponse<InvestigationTask>>('/api/v1/orchestration/tasks', req);
+    return res.data;
+  },
+  updateInvestigationTask: async (taskId: string, req: any) => {
+    const res = await api.put<ApiResponse<InvestigationTask>>(`/api/v1/orchestration/tasks/${taskId}`, req);
+    return res.data;
+  },
+  completeInvestigationTask: async (taskId: string) => {
+    const res = await api.post<ApiResponse<InvestigationTask>>(`/api/v1/orchestration/tasks/${taskId}/complete`);
+    return res.data;
+  },
+  getCaseChecklist: async (caseId: string) => {
+    const res = await api.get<ApiResponse<CaseChecklistItem[]>>(`/api/v1/orchestration/cases/${caseId}/checklist`);
+    return res.data;
+  },
+  addCaseChecklistItem: async (caseId: string, req: { title: string; order?: number }) => {
+    const res = await api.post<ApiResponse<CaseChecklistItem>>(`/api/v1/orchestration/cases/${caseId}/checklist`, req);
+    return res.data;
+  },
+  updateCaseChecklistItem: async (caseId: string, itemId: string, req: { is_completed: boolean }) => {
+    const res = await api.put<ApiResponse<CaseChecklistItem>>(`/api/v1/orchestration/cases/${caseId}/checklist/${itemId}`, req);
+    return res.data;
+  },
+  getUnifiedTimeline: async (caseOrEntityId: string, limit: number = 50) => {
+    const res = await api.get<ApiResponse<UnifiedTimelineEvent[]>>(`/api/v1/orchestration/timeline/${caseOrEntityId}`, { params: { limit } });
+    return res.data;
+  },
+  discoverRelatedCases: async (caseId: string) => {
+    const res = await api.get<ApiResponse<RelatedCase[]>>(`/api/v1/orchestration/related-cases/${caseId}`);
+    return res.data;
+  },
+  getInvestigationRecommendations: async (caseId: string) => {
+    const res = await api.get<ApiResponse<InvestigationRecommendation[]>>(`/api/v1/orchestration/recommendations/${caseId}`);
+    return res.data;
+  },
+  searchInvestigationEntities: async (query: string) => {
+    const res = await api.get<ApiResponse<any>>('/api/v1/orchestration/search', { params: { q: query } });
+    return res.data;
+  },
+
 };
