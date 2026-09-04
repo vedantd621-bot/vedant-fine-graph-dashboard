@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { DashboardPage } from './pages/DashboardPage';
@@ -8,6 +8,11 @@ import { AccountsPage } from './pages/AccountsPage';
 import { AccountDetailPage } from './pages/AccountDetailPage';
 import { CasesPage } from './pages/CasesPage';
 import { InvestigationPage } from './pages/InvestigationPage';
+import { FraudNetworksPage } from './pages/FraudNetworksPage';
+import { FraudNetworkDetailPage } from './pages/FraudNetworkDetailPage';
+import { AlertQueuePage } from './pages/AlertQueuePage';
+import { InvestigationOperationsPage } from './pages/InvestigationOperationsPage';
+import { FraudOperationsDashboard } from './pages/FraudOperationsDashboard';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { LoginPage } from './auth/LoginPage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -19,6 +24,7 @@ export const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
+  const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   if (isLoading) {
@@ -44,6 +50,11 @@ export const AppContent: React.FC = () => {
   const handleSelectAlert = (alertId: string) => {
     setSelectedAlertId(alertId);
     setActiveTab('alert-detail');
+  };
+
+  const handleSelectNetwork = (networkId: string) => {
+    setSelectedNetworkId(networkId);
+    setActiveTab('network-detail');
   };
 
   const handleSearch = (query: string) => {
@@ -72,6 +83,8 @@ export const AppContent: React.FC = () => {
                 ? 'accounts'
                 : activeTab.startsWith('alert')
                 ? 'alerts'
+                : activeTab.startsWith('network')
+                ? 'networks'
                 : activeTab
             }
             setActiveTab={setActiveTab}
@@ -86,6 +99,25 @@ export const AppContent: React.FC = () => {
               />
             )}
 
+            {activeTab === 'operations' && (
+              <FraudOperationsDashboard onNavigate={setActiveTab} />
+            )}
+
+            {activeTab === 'queue' && (
+              <AlertQueuePage
+                onSelectAlert={handleSelectAlert}
+                onSelectAccount={handleSelectAccount}
+              />
+            )}
+
+            {activeTab === 'investigator-hub' && (
+              <InvestigationOperationsPage
+                onSelectAccount={handleSelectAccount}
+                onSelectAlert={handleSelectAlert}
+                onNavigate={setActiveTab}
+              />
+            )}
+
             {activeTab === 'alerts' && (
               <AlertsPage onSelectAlert={handleSelectAlert} />
             )}
@@ -94,6 +126,18 @@ export const AppContent: React.FC = () => {
               <AlertDetailPage
                 alertId={selectedAlertId}
                 onBack={() => setActiveTab('alerts')}
+                onSelectAccount={handleSelectAccount}
+              />
+            )}
+
+            {activeTab === 'networks' && (
+              <FraudNetworksPage onSelectNetwork={handleSelectNetwork} />
+            )}
+
+            {activeTab === 'network-detail' && selectedNetworkId && (
+              <FraudNetworkDetailPage
+                networkId={selectedNetworkId}
+                onBack={() => setActiveTab('networks')}
                 onSelectAccount={handleSelectAccount}
               />
             )}

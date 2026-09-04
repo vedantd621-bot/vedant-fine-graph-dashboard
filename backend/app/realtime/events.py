@@ -1,6 +1,6 @@
 """
 FinGraph Real-Time Event Envelope & Strongly Typed Payloads.
-Ensures uniform JSON serialization for WebSocket broadcast events across alerts, risk, transactions, and cases.
+Ensures uniform JSON serialization for WebSocket broadcast events across alerts, risk, transactions, cases, and operations.
 """
 from datetime import datetime, timezone
 from enum import Enum
@@ -16,6 +16,13 @@ class EventType(str, Enum):
     """Supported real-time WebSocket event classifications."""
     ALERT_CREATED = "alert.created"
     ALERT_UPDATED = "alert.updated"
+    ALERT_PRIORITIZED = "alert.prioritized"
+    ALERT_ASSIGNED = "alert.assigned"
+    ALERT_REASSIGNED = "alert.reassigned"
+    SLA_WARNING = "sla.warning"
+    SLA_BREACHED = "sla.breached"
+    TRIAGE_UPDATED = "triage.updated"
+    NOTIFICATION_CREATED = "notification.created"
     RISK_UPDATED = "risk.updated"
     TRANSACTION_CREATED = "transaction.created"
     GRAPH_UPDATED = "graph.updated"
@@ -78,6 +85,75 @@ class AlertUpdatedPayload(BaseModel):
     notes: Optional[str] = None
 
 
+class AlertPrioritizedPayload(BaseModel):
+    """Payload emitted when an alert priority score or tier is computed."""
+    alert_id: str
+    priority_score: float
+    priority_level: str
+    sla_deadline: datetime
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class AlertAssignedPayload(BaseModel):
+    """Payload emitted when an alert is assigned to an investigator."""
+    alert_id: str
+    assigned_to: str
+    assigned_by: str
+    previous_assignee: Optional[str] = None
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class AlertReassignedPayload(BaseModel):
+    """Payload emitted when an alert is reassigned."""
+    alert_id: str
+    previous_assignee: Optional[str] = None
+    new_assignee: str
+    reassigned_by: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class SLAWarningPayload(BaseModel):
+    """Payload emitted when an alert enters the AT_RISK window (<25% SLA remaining)."""
+    alert_id: str
+    priority_level: str
+    time_remaining_minutes: float
+    sla_deadline: datetime
+    assigned_to: Optional[str] = None
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class SLABreachedPayload(BaseModel):
+    """Payload emitted when an alert breaches its SLA deadline."""
+    alert_id: str
+    priority_level: str
+    breached_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    assigned_to: Optional[str] = None
+
+
+class TriageUpdatedPayload(BaseModel):
+    """Payload emitted when an alert undergoes a valid triage state change."""
+    alert_id: str
+    previous_status: str
+    new_status: str
+    actor: str
+    notes: Optional[str] = None
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class NotificationCreatedPayload(BaseModel):
+    """Payload emitted when an in-app operational notification is dispatched."""
+    notification_id: str
+    user_id: Optional[str] = None
+    target_role: Optional[str] = None
+    type: str
+    severity: str
+    title: str
+    message: str
+    resource_type: Optional[str] = None
+    resource_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 class RiskUpdatedPayload(BaseModel):
     """Payload emitted when an account's composite risk score or level is updated."""
     account_id: str
@@ -106,7 +182,7 @@ class TransactionCreatedPayload(BaseModel):
 class GraphUpdatedPayload(BaseModel):
     """Payload emitted when the graph topology for an account changes."""
     account_id: str
-    change_type: str = "TRANSACTION_ADDED"  # "TRANSACTION_ADDED", "ACCOUNT_FROZEN", "COMMUNITY_CHANGED"
+    change_type: str = "TRANSACTION_ADDED"
     related_account_id: Optional[str] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -135,7 +211,7 @@ class CaseUpdatedPayload(BaseModel):
 class InvestigationUpdatedPayload(BaseModel):
     """Payload emitted when evidence or notes are attached to an active investigation."""
     case_id: str
-    update_type: str  # "NOTE_ADDED", "EVIDENCE_ATTACHED", "ALERT_LINKED", "ACCOUNT_LINKED"
+    update_type: str
     author: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     detail: Optional[str] = None
@@ -165,7 +241,7 @@ class NetworkCreatedPayload(BaseModel):
 class NetworkUpdatedPayload(BaseModel):
     """Payload emitted when a fraud network is mutated or linked to a case."""
     network_id: str
-    action: str  # "MEMBER_ADDED", "CASE_LINKED", "ALERT_LINKED", "STATUS_UPDATED"
+    action: str
     risk_score: float
     member_count: int
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

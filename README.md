@@ -184,3 +184,10 @@ python -m pytest simulator/tests/ tests/ -v
 
 > [!WARNING]
 > **Synthetic Demonstration System Only**: FinGraph is an educational and portfolio analytics platform using 100% synthetic transaction data. It does not connect to live banking rails. The "Freeze Account" action updates the graph state and creates immutable audit entries for compliance simulation.
+
+## Phase 13: Real-Time Fraud Operations & Alert Prioritization
+- **Deterministic Alert Prioritization**: 4-factor scoring ($0-100$) mapped to `P0_CRITICAL`, `P1_HIGH`, `P2_MEDIUM`, `P3_LOW` with explainability factors.
+- **Dynamic SLA Countdown**: Real-time SLA tracking (15m to 24h) with `WITHIN_SLA`, `AT_RISK`, and `BREACHED` states.
+- **7-State Triage State Machine**: Strict lifecycle state transitions with RBAC and immutable audit logging.
+- **Investigator Workspace & Queue**: `AlertQueuePage.tsx`, `InvestigationOperationsPage.tsx`, `FraudOperationsDashboard.tsx`.
+- **In-App Notification Center & Unified Search**: Fast multi-entity search and role-scoped in-app notifications with WebSocket push.

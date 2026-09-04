@@ -30,6 +30,9 @@ from backend.app.services.intelligence_service import IntelligenceService
 from backend.app.services.network_intelligence_service import NetworkIntelligenceService
 from backend.app.services.behavior_anomaly_service import BehaviorAnomalyService
 from backend.app.services.feature_service import FeatureService
+from backend.app.services.alert_prioritization_service import AlertPrioritizationService
+from backend.app.services.operations_service import OperationsService
+from backend.app.services.notification_service import NotificationService
 
 logger = logging.getLogger("FinGraph.Dependencies")
 
@@ -37,6 +40,8 @@ _global_client: Neo4jClient = None
 _global_detection_engine: DetectionEngine = None
 _global_gds_manager: GDSManager = None
 _global_risk_engine: ExplainableRiskEngine = None
+_global_prioritization_service: AlertPrioritizationService = None
+_global_notification_service: NotificationService = None
 
 
 def get_neo4j_client() -> Neo4jClient:
@@ -226,3 +231,43 @@ def get_feature_service(
         case_service=case_service,
     )
 
+
+def get_alert_prioritization_service() -> AlertPrioritizationService:
+    """Returns singleton AlertPrioritizationService instance."""
+    global _global_prioritization_service
+    if _global_prioritization_service is None:
+        _global_prioritization_service = AlertPrioritizationService()
+    return _global_prioritization_service
+
+
+def get_notification_service() -> NotificationService:
+    """Returns singleton NotificationService instance."""
+    global _global_notification_service
+    if _global_notification_service is None:
+        _global_notification_service = NotificationService()
+    return _global_notification_service
+
+
+def get_operations_service(
+    client: Neo4jClient = Depends(get_neo4j_client),
+    detection_engine: DetectionEngine = Depends(get_detection_engine),
+    risk_engine: ExplainableRiskEngine = Depends(get_risk_engine),
+    account_service: AccountService = Depends(get_account_service),
+    alert_service: AlertService = Depends(get_alert_service),
+    case_service: CaseService = Depends(get_case_service),
+    network_service: NetworkIntelligenceService = Depends(get_network_intelligence_service),
+    prioritization_service: AlertPrioritizationService = Depends(get_alert_prioritization_service),
+    audit_service: AuditService = Depends(get_audit_service),
+) -> OperationsService:
+    """Returns OperationsService instance."""
+    return OperationsService(
+        client=client,
+        detection_engine=detection_engine,
+        risk_engine=risk_engine,
+        account_service=account_service,
+        alert_service=alert_service,
+        case_service=case_service,
+        network_service=network_service,
+        prioritization_service=prioritization_service,
+        audit_service=audit_service,
+    )

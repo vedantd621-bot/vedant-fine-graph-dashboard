@@ -43,6 +43,8 @@ from backend.app.routes import (
     investigation_router,
     metrics_router,
     networks_router,
+    notifications_router,
+    operations_router,
     websocket_router,
 )
 
@@ -186,6 +188,8 @@ app.include_router(alerts_router)
 app.include_router(accounts_router)
 app.include_router(cases_router)
 app.include_router(intelligence_router)
+app.include_router(operations_router)
+app.include_router(notifications_router)
 app.include_router(networks_router)
 app.include_router(behavior_router)
 app.include_router(features_router)

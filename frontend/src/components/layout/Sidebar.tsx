@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   LayoutDashboard,
   Share2,
@@ -6,6 +6,9 @@ import {
   Users,
   Compass,
   ShieldAlert,
+  ListOrdered,
+  Briefcase,
+  TrendingUp,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -21,6 +24,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const navItems = [
     { id: 'dashboard', label: 'Executive Overview', icon: LayoutDashboard },
+    { id: 'operations', label: 'Fraud Ops Dashboard', icon: TrendingUp },
+    { id: 'queue', label: 'Alert Queue & Triage', icon: ListOrdered },
+    { id: 'investigator-hub', label: 'Investigator Workspace', icon: Briefcase },
     { id: 'alerts', label: 'Alerts Catalog', icon: AlertTriangle, badge: openAlertsCount },
     { id: 'accounts', label: 'Account Dossiers', icon: Users },
     { id: 'cases', label: 'Investigation Cases', icon: ShieldAlert },
@@ -32,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between p-4 shrink-0 text-slate-300">
       <div className="space-y-6">
         <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-3">
-          Investigation Platform
+          Fraud Operations Platform
         </div>
 
         <nav className="space-y-1.5">
@@ -67,12 +73,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* System Status Footnote */}
       <div className="p-3.5 rounded-xl bg-slate-800/50 border border-slate-800 text-xs space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">Risk Engine</span>
-          <span className="text-cyan-400 font-semibold">rule-gds-v1</span>
+          <span className="text-slate-400">Operations</span>
+          <span className="text-cyan-400 font-semibold">Real-Time Queue</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-slate-400">Graph Backend</span>
-          <span className="text-emerald-400 font-medium">Neo4j 5.18 GDS</span>
+          <span className="text-slate-400">SLA Engine</span>
+          <span className="text-emerald-400 font-medium">Dynamic Countdown</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-slate-400">Pipeline</span>

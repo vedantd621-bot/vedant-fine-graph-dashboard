@@ -11,6 +11,9 @@ from backend.app.services.intelligence_service import IntelligenceService
 from backend.app.services.network_intelligence_service import NetworkIntelligenceService
 from backend.app.services.behavior_anomaly_service import BehaviorAnomalyService
 from backend.app.services.feature_service import FeatureService
+from backend.app.services.alert_prioritization_service import AlertPrioritizationService
+from backend.app.services.operations_service import OperationsService
+from backend.app.services.notification_service import NotificationService
 
 __all__ = [
     "AlertService",
@@ -23,5 +26,7 @@ __all__ = [
     "NetworkIntelligenceService",
     "BehaviorAnomalyService",
     "FeatureService",
+    "AlertPrioritizationService",
+    "OperationsService",
+    "NotificationService",
 ]
-

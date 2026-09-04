@@ -344,4 +344,83 @@ export const apiClient = {
     const res = await api.post<FeatureStoreExportResponse>('/api/v1/features/export', req);
     return res.data;
   },
+
+  // Operations & Alert Prioritization (Phase 13)
+  listPrioritizedAlerts: async (params?: any) => {
+    const res = await api.get<PrioritizedAlertListResponse>('/api/v1/operations/alerts', { params });
+    return res.data;
+  },
+  getInvestigatorQueue: async (params?: any) => {
+    const res = await api.get<PrioritizedAlertListResponse>('/api/v1/operations/queue', { params });
+    return res.data;
+  },
+  getAlertPriorityExplanation: async (alertId: string) => {
+    const res = await api.get<AlertPriorityExplanation>(`/api/v1/operations/alerts/${alertId}/priority-explanation`);
+    return res.data;
+  },
+  triageAlert: async (alertId: string, payload: AlertTriageRequest) => {
+    const res = await api.post<PrioritizedAlert>(`/api/v1/operations/alerts/${alertId}/triage`, payload);
+    return res.data;
+  },
+  assignAlert: async (alertId: string, payload: AlertAssignRequest) => {
+    const res = await api.post<PrioritizedAlert>(`/api/v1/operations/alerts/${alertId}/assign`, payload);
+    return res.data;
+  },
+  unassignAlert: async (alertId: string) => {
+    const res = await api.post<PrioritizedAlert>(`/api/v1/operations/alerts/${alertId}/unassign`);
+    return res.data;
+  },
+  bulkTriageAlerts: async (payload: BulkAlertTriageRequest) => {
+    const res = await api.post<BulkOperationResult>('/api/v1/operations/alerts/bulk-triage', payload);
+    return res.data;
+  },
+  bulkAssignAlerts: async (payload: BulkAlertAssignRequest) => {
+    const res = await api.post<BulkOperationResult>('/api/v1/operations/alerts/bulk-assign', payload);
+    return res.data;
+  },
+  getInvestigatorWorkload: async (investigatorId?: string) => {
+    const params = investigatorId ? { investigator_id: investigatorId } : {};
+    const res = await api.get<WorkloadListResponse>('/api/v1/operations/workload', { params });
+    return res.data;
+  },
+  getSLASummary: async () => {
+    const res = await api.get<SLASummary>('/api/v1/operations/sla');
+    return res.data;
+  },
+  getFraudTrends: async (interval: string = 'hourly', days: number = 7) => {
+    const res = await api.get<FraudTrendsResponse>('/api/v1/operations/trends', {
+      params: { interval, days },
+    });
+    return res.data;
+  },
+  getDetectorPerformance: async () => {
+    const res = await api.get<DetectorPerformanceResponse>('/api/v1/operations/detectors');
+    return res.data;
+  },
+  getOperationsSummary: async () => {
+    const res = await api.get<OperationsSummary>('/api/v1/operations/summary');
+    return res.data;
+  },
+  unifiedSearch: async (q: string, entityTypes?: string[], limit: number = 20, page: number = 1) => {
+    const params: any = { q, limit, page };
+    if (entityTypes && entityTypes.length > 0) {
+      params.entity_types = entityTypes;
+    }
+    const res = await api.get<UnifiedSearchResponse>('/api/v1/operations/search', { params });
+    return res.data;
+  },
+
+  // Notifications (Phase 13)
+  listNotifications: async (limit: number = 50) => {
+    const res = await api.get<NotificationListResponse>('/api/v1/notifications', { params: { limit } });
+    return res.data;
+  },
+  markNotificationRead: async (notificationId: string) => {
+    const res = await api.post<AppNotification>(`/api/v1/notifications/${notificationId}/read`);
+    return res.data;
+  },
+  markAllNotificationsRead: async () => {
+    const res = await api.post<{ marked_read_count: number }>('/api/v1/notifications/read-all');
+    return res.data;
+  },
 };
