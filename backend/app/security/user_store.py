@@ -18,17 +18,21 @@ class UserStore:
     def _seed_default_users(self):
         """Initializes default role accounts with secure password hashes."""
         default_accounts = [
-            ("admin", "admin_secret_pass_2026", Role.ADMIN, "usr_admin_001"),
-            ("investigator", "investigator_secret_pass_2026", Role.INVESTIGATOR, "usr_inv_002"),
-            ("analyst", "analyst_secret_pass_2026", Role.ANALYST, "usr_ana_003"),
+            ("platform_admin", "platform_secret_pass_2026", Role.PLATFORM_ADMIN, "usr_plat_000", "GLOBAL", ["PLATFORM_ADMIN"]),
+            ("admin", "admin_secret_pass_2026", Role.ADMIN, "usr_admin_001", "tnt_default", ["TENANT_ADMIN", "USER_ADMIN", "POLICY_ADMIN"]),
+            ("investigator", "investigator_secret_pass_2026", Role.INVESTIGATOR, "usr_inv_002", "tnt_default", ["CASE_CREATE", "CASE_UPDATE", "CASE_ASSIGN", "EVIDENCE_CREATE"]),
+            ("analyst", "analyst_secret_pass_2026", Role.ANALYST, "usr_ana_003", "tnt_default", ["ALERT_READ", "CASE_READ", "EVIDENCE_READ"]),
         ]
-        for uname, pwd, role, uid in default_accounts:
+        for uname, pwd, role, uid, tenant, perms in default_accounts:
             user = User(
                 user_id=uid,
                 username=uname,
                 password_hash=hash_password(pwd),
                 role=role,
                 is_active=True,
+                tenant_id=tenant,
+                organization_id="org_default",
+                permissions=perms,
             )
             self._users_by_id[user.user_id] = user
             self._users_by_username[uname.lower()] = user.user_id
@@ -42,7 +46,9 @@ class UserStore:
     def get_user_by_id(self, user_id: str) -> Optional[User]:
         return self._users_by_id.get(user_id)
 
-    def list_users(self) -> List[User]:
+    def list_users(self, tenant_id: Optional[str] = None) -> List[User]:
+        if tenant_id and tenant_id != "GLOBAL":
+            return [u for u in self._users_by_id.values() if u.tenant_id == tenant_id or u.tenant_id == "GLOBAL"]
         return list(self._users_by_id.values())
 
     def create_user(self, req: CreateUserRequest) -> User:
@@ -54,6 +60,10 @@ class UserStore:
             password_hash=hash_password(req.password),
             role=req.role,
             is_active=req.is_active,
+            tenant_id=req.tenant_id or "tnt_default",
+            organization_id=req.organization_id or "org_default",
+            team_ids=req.team_ids or [],
+            permissions=req.permissions or [],
         )
         self._users_by_id[user.user_id] = user
         self._users_by_username[user.username.lower()] = user.user_id
@@ -70,6 +80,14 @@ class UserStore:
             user.is_active = req.is_active
         if req.password:
             user.password_hash = hash_password(req.password)
+        if req.tenant_id is not None:
+            user.tenant_id = req.tenant_id
+        if req.organization_id is not None:
+            user.organization_id = req.organization_id
+        if req.team_ids is not None:
+            user.team_ids = req.team_ids
+        if req.permissions is not None:
+            user.permissions = req.permissions
 
         return user
 

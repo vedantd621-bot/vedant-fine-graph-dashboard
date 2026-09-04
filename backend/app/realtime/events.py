@@ -67,6 +67,12 @@ class EventType(str, Enum):
     TASK_COMPLETED = "task.completed"
     RECOMMENDATION_CREATED = "recommendation.created"
     WORKFLOW_STATE_CHANGED = "workflow_state.changed"
+    TENANT_CREATED = "tenant.created"
+    TENANT_STATUS_CHANGED = "tenant.status_changed"
+    USER_STATUS_CHANGED = "user.status_changed"
+    TEAM_MEMBERSHIP_CHANGED = "team.membership_changed"
+    POLICY_CHANGED = "policy.changed"
+    CONFIGURATION_CHANGED = "configuration.changed"
     SYSTEM_PING = "system.ping"
     SYSTEM_PONG = "system.pong"
     ERROR = "error"
@@ -76,11 +82,12 @@ T = TypeVar("T")
 
 
 class RealtimeEvent(BaseModel, Generic[T]):
-    """Standardized event envelope with versioning, UUID, and UTC timestamp."""
+    """Standardized event envelope with versioning, UUID, UTC timestamp, and tenant isolation."""
     event: EventType
     event_id: str = Field(default_factory=lambda: f"evt_{uuid.uuid4().hex[:12]}")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     version: int = Field(default=1)
+    tenant_id: Optional[str] = None
     data: T
 
     def to_json_dict(self) -> Dict[str, Any]:
@@ -479,9 +486,12 @@ class ThreatPropagationDetectedPayload(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-def create_realtime_event(event_type: EventType, data: Any) -> RealtimeEvent:
+def create_realtime_event(
+    event_type: EventType, data: Any, tenant_id: Optional[str] = None
+) -> RealtimeEvent:
     """Helper factory for creating typed RealtimeEvent instances."""
     return RealtimeEvent(
         event=event_type,
+        tenant_id=tenant_id,
         data=data,
     )

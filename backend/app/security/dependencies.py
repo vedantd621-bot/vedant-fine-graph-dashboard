@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, Query, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from backend.app.security.jwt import decode_access_token
-from backend.app.security.models import Role, User
+from backend.app.security.models import Permission, Role, User
 from backend.app.security.user_store import UserStore, get_user_store
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -96,7 +96,30 @@ def require_role(allowed_roles: List[Role]) -> Callable:
     return role_checker
 
 
+def require_permission(permission: Permission) -> Callable:
+    """Dependency factory restricting route access to users holding a specific permission."""
+    def permission_checker(current_user: User = Depends(get_current_user)) -> User:
+        # Platform admin or admin holds all standard permissions
+        if current_user.role in [Role.PLATFORM_ADMIN, Role.ADMIN]:
+            return current_user
+
+        user_perms = getattr(current_user, "permissions", [])
+        if permission.value not in user_perms and permission.name not in user_perms:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "PERMISSION_DENIED",
+                    "message": f"User lacks required permission: {permission.value}",
+                },
+            )
+        return current_user
+
+    return permission_checker
+
+
 # Convenience role dependencies
-require_analyst = require_role([Role.ANALYST, Role.INVESTIGATOR, Role.ADMIN])
-require_investigator = require_role([Role.INVESTIGATOR, Role.ADMIN])
-require_admin = require_role([Role.ADMIN])
+require_analyst = require_role([Role.ANALYST, Role.INVESTIGATOR, Role.ADMIN, Role.PLATFORM_ADMIN])
+require_investigator = require_role([Role.INVESTIGATOR, Role.ADMIN, Role.PLATFORM_ADMIN])
+require_admin = require_role([Role.ADMIN, Role.PLATFORM_ADMIN])
+require_platform_admin = require_role([Role.PLATFORM_ADMIN])
+require_tenant_admin = require_role([Role.ADMIN, Role.PLATFORM_ADMIN])

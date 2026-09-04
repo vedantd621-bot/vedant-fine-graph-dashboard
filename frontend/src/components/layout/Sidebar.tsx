@@ -26,6 +26,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   openAlertsCount = 0,
 }) => {
   const navItems = [
+    { id: 'control-center', label: 'Control Center', icon: Shield },
+    { id: 'tenants', label: 'Tenants', icon: LayoutDashboard },
+    { id: 'policies', label: 'Policy Engine', icon: ShieldAlert },
+    { id: 'user-management', label: 'User Identities', icon: Users },
+    { id: 'team-management', label: 'Investigation Teams', icon: Briefcase },
     { id: 'command-center', label: 'Command Center V2', icon: Zap },
     { id: 'early-warnings', label: 'Early Warning Center', icon: AlertTriangle },
     { id: 'network-evolution', label: 'Network Evolution', icon: Activity },

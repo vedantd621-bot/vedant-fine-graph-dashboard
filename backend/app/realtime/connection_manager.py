@@ -64,11 +64,13 @@ class WebSocketConnectionManager:
                 logger.warning(f"Connection rejected: Max capacity ({self.max_clients}) reached.")
                 await websocket.close(code=1008, reason="Max concurrent connections reached")
                 return False
-
             await websocket.accept()
+            info = client_info or {}
             self._connections[websocket] = {
                 "connected_at": datetime.now(timezone.utc),
-                "client_info": client_info or {},
+                "client_info": info,
+                "tenant_id": info.get("tenant_id", "tnt_default"),
+                "is_platform_admin": info.get("is_platform_admin", False) or info.get("role") == "PLATFORM_ADMIN",
                 "channels": {"all", "alerts", "risk", "transactions", "graph"},
                 "watched_accounts": set(),
             }
@@ -100,7 +102,7 @@ class WebSocketConnectionManager:
         await self.broadcast(event)
 
     async def broadcast(self, event: RealtimeEvent) -> None:
-        """Broadcasts an event envelope to matching connected clients."""
+        """Broadcasts an event envelope to matching connected clients respecting tenant isolation."""
         self._total_broadcast_count += 1
         payload_str = json.dumps(event.to_json_dict())
 
@@ -110,12 +112,19 @@ class WebSocketConnectionManager:
             sockets = list(self._connections.items())
 
         for ws, meta in sockets:
-            # Check channel filtering
+            # 1. Check Tenant Isolation: If event is tenant-scoped, only send to matching tenant or platform admin
+            if event.tenant_id and event.tenant_id != "GLOBAL":
+                client_tenant = meta.get("tenant_id", "tnt_default")
+                is_plat_admin = meta.get("is_platform_admin", False)
+                if not is_plat_admin and client_tenant != event.tenant_id:
+                    continue
+
+            # 2. Check channel filtering
             evt_category = event.event.value.split(".")[0]
             if "all" not in meta["channels"] and evt_category not in meta["channels"]:
                 continue
 
-            # Check account filter if applicable
+            # 3. Check account filter if applicable
             data_dict = event.data if isinstance(event.data, dict) else (
                 event.data.model_dump(mode="json") if hasattr(event.data, "model_dump") else {}
             )

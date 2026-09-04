@@ -22,11 +22,13 @@ class AuditService:
         new_value: Optional[str] = None,
         request_id: Optional[str] = None,
         username: Optional[str] = None,
+        tenant_id: Optional[str] = "tnt_default",
     ) -> AuditLog:
         """Appends a new audit log entry."""
         log = AuditLog(
             user_id=user_id,
             username=username,
+            tenant_id=tenant_id or "tnt_default",
             action=action,
             resource_type=resource_type,
             resource_id=resource_id,
@@ -42,11 +44,14 @@ class AuditService:
         action: Optional[str] = None,
         resource_type: Optional[str] = None,
         user_id: Optional[str] = None,
+        tenant_id: Optional[str] = None,
         page: int = 1,
         page_size: int = 50,
     ) -> Tuple[List[AuditLog], int]:
         """Returns paginated, filtered audit records."""
         filtered = self._logs
+        if tenant_id and tenant_id != "GLOBAL":
+            filtered = [l for l in filtered if l.tenant_id == tenant_id or l.tenant_id == "GLOBAL"]
         if action:
             filtered = [l for l in filtered if l.action == action]
         if resource_type:

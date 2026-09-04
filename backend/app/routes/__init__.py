@@ -44,3 +44,10 @@ __all__ = [
 ]
 from backend.app.routes.autonomous_intelligence import router as autonomous_intelligence_router
 from backend.app.routes.orchestration import router as orchestration_router
+from backend.app.routes.control_plane import router as control_plane_router
+
+__all__.extend([
+    "autonomous_intelligence_router",
+    "orchestration_router",
+    "control_plane_router",
+])

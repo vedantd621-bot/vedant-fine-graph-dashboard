@@ -1,3 +1,4 @@
+import { ControlPlaneOverview, Tenant, TenantQuota, TenantConfiguration, ConfigurationVersion, Organization, BusinessUnit, InvestigationTeam, TenantUsageMetrics, Policy, PolicyEffect, PolicyEvaluationRequest, PolicyEvaluationResult, TenantStatus } from '../types/tenancy';
 ﻿import axios from 'axios';
 import {
   AccountDetail,
@@ -718,6 +719,121 @@ export const apiClient = {
   searchInvestigationEntities: async (query: string) => {
     const res = await api.get<ApiResponse<any>>('/api/v1/orchestration/search', { params: { q: query } });
     return res.data;
+  },
+
+
+  // Phase 20 Control Plane & Multi-Tenancy APIs
+  getControlPlaneOverview: async (): Promise<ApiResponse<ControlPlaneOverview>> => {
+    const res = await api.get('/api/v1/control-plane/overview');
+    return res.data;
+  },
+  listTenants: async (): Promise<ApiResponse<Tenant[]>> => {
+    const res = await api.get('/api/v1/control-plane/tenants');
+    return res.data;
+  },
+  createTenant: async (payload: { name: string; slug: string; quotas?: TenantQuota }): Promise<ApiResponse<Tenant>> => {
+    const res = await api.post('/api/v1/control-plane/tenants', payload);
+    return res.data;
+  },
+  getTenant: async (tenantId: string): Promise<ApiResponse<Tenant>> => {
+    const res = await api.get(`/api/v1/control-plane/tenants/${tenantId}`);
+    return res.data;
+  },
+  updateTenant: async (tenantId: string, payload: { name?: string; quotas?: TenantQuota }): Promise<ApiResponse<Tenant>> => {
+    const res = await api.put(`/api/v1/control-plane/tenants/${tenantId}`, payload);
+    return res.data;
+  },
+  transitionTenantStatus: async (tenantId: string, targetStatus: TenantStatus, reason: string): Promise<ApiResponse<Tenant>> => {
+    const res = await api.post(`/api/v1/control-plane/tenants/${tenantId}/status`, { target_status: targetStatus, reason });
+    return res.data;
+  },
+  getTenantConfiguration: async (tenantId: string): Promise<ApiResponse<TenantConfiguration>> => {
+    const res = await api.get(`/api/v1/control-plane/tenants/${tenantId}/configuration`);
+    return res.data;
+  },
+  listConfigurationVersions: async (tenantId: string): Promise<ApiResponse<ConfigurationVersion[]>> => {
+    const res = await api.get(`/api/v1/control-plane/tenants/${tenantId}/configuration/versions`);
+    return res.data;
+  },
+  activateConfigurationVersion: async (tenantId: string, versionId: string): Promise<ApiResponse<ConfigurationVersion>> => {
+    const res = await api.post(`/api/v1/control-plane/tenants/${tenantId}/configuration/${versionId}/activate`);
+    return res.data;
+  },
+  getTenantQuotas: async (tenantId: string): Promise<ApiResponse<TenantQuota>> => {
+    const res = await api.get(`/api/v1/control-plane/tenants/${tenantId}/quotas`);
+    return res.data;
+  },
+  getTenantUsage: async (tenantId: string): Promise<ApiResponse<TenantUsageMetrics>> => {
+    const res = await api.get(`/api/v1/control-plane/tenants/${tenantId}/usage`);
+    return res.data;
+  },
+  listOrganizations: async (): Promise<ApiResponse<Organization[]>> => {
+    const res = await api.get('/api/v1/control-plane/organizations');
+    return res.data;
+  },
+  createOrganization: async (payload: { name: string; description?: string }): Promise<ApiResponse<Organization>> => {
+    const res = await api.post('/api/v1/control-plane/organizations', payload);
+    return res.data;
+  },
+  listBusinessUnits: async (orgId?: string): Promise<ApiResponse<BusinessUnit[]>> => {
+    const res = await api.get('/api/v1/control-plane/business-units', { params: { org_id: orgId } });
+    return res.data;
+  },
+  listTeams: async (): Promise<ApiResponse<InvestigationTeam[]>> => {
+    const res = await api.get('/api/v1/control-plane/teams');
+    return res.data;
+  },
+  createTeam: async (payload: { org_id: string; name: string; description?: string; lead_user_id?: string }): Promise<ApiResponse<InvestigationTeam>> => {
+    const res = await api.post('/api/v1/control-plane/teams', payload);
+    return res.data;
+  },
+  getTeam: async (teamId: string): Promise<ApiResponse<InvestigationTeam>> => {
+    const res = await api.get(`/api/v1/control-plane/teams/${teamId}`);
+    return res.data;
+  },
+  addTeamMember: async (teamId: string, payload: { user_id: string; username: string; role: string }): Promise<ApiResponse<InvestigationTeam>> => {
+    const res = await api.post(`/api/v1/control-plane/teams/${teamId}/members`, payload);
+    return res.data;
+  },
+  removeTeamMember: async (teamId: string, userId: string): Promise<ApiResponse<InvestigationTeam>> => {
+    const res = await api.delete(`/api/v1/control-plane/teams/${teamId}/members/${userId}`);
+    return res.data;
+  },
+  listTenantUsers: (): Promise<ApiResponse<UserResponse[]>> => {
+    return api.get('/api/v1/control-plane/users').then(r => r.data);
+  },
+  inviteUser: (payload: { username: string; password: string; role: Role; tenant_id?: string; organization_id?: string }): Promise<ApiResponse<UserResponse>> => {
+    return api.post('/api/v1/control-plane/users/invite', payload).then(r => r.data);
+  },
+  updateUserStatus: (userId: string, targetStatus: string, reason?: string): Promise<ApiResponse<UserResponse>> => {
+    return api.post(`/api/v1/control-plane/users/${userId}/status`, { target_status: targetStatus, reason }).then(r => r.data);
+  },
+  listRoles: (): Promise<ApiResponse<Array<{ role: string; description: string }>>> => {
+    return api.get('/api/v1/control-plane/roles').then(r => r.data);
+  },
+  listPermissions: (): Promise<ApiResponse<string[]>> => {
+    return api.get('/api/v1/control-plane/permissions').then(r => r.data);
+  },
+  listPolicies: (): Promise<ApiResponse<Policy[]>> => {
+    return api.get('/api/v1/control-plane/policies').then(r => r.data);
+  },
+  createPolicy: (payload: { name: string; resource: string; action: string; effect: PolicyEffect; priority?: number; description?: string }): Promise<ApiResponse<Policy>> => {
+    return api.post('/api/v1/control-plane/policies', payload).then(r => r.data);
+  },
+  getPolicy: (policyId: string): Promise<ApiResponse<Policy>> => {
+    return api.get(`/api/v1/control-plane/policies/${policyId}`).then(r => r.data);
+  },
+  updatePolicy: (policyId: string, payload: Partial<Policy>): Promise<ApiResponse<Policy>> => {
+    return api.put(`/api/v1/control-plane/policies/${policyId}`, payload).then(r => r.data);
+  },
+  deletePolicy: (policyId: string): Promise<ApiResponse<boolean>> => {
+    return api.delete(`/api/v1/control-plane/policies/${policyId}`).then(r => r.data);
+  },
+  evaluatePolicy: (payload: PolicyEvaluationRequest): Promise<ApiResponse<PolicyEvaluationResult>> => {
+    return api.post('/api/v1/control-plane/policies/evaluate', payload).then(r => r.data);
+  },
+  getTenantAuditLogs: (params?: { action?: string; resource_type?: string; user_id?: string; page?: number; page_size?: number }): Promise<ApiResponse<AuditLog[]>> => {
+    return api.get('/api/v1/control-plane/audit', { params }).then(r => r.data);
   },
 
 };

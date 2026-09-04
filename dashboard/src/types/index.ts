@@ -378,3 +378,5 @@ export interface InvestigationAnalytics {
 
 export * from './operations';
 export * from './notifications';
+
+export * from './tenancy';

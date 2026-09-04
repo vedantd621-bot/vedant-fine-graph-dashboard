@@ -9,7 +9,7 @@
 [![Neo4j](https://img.shields.io/badge/Graph%20DB-Neo4j%205%20%2B%20GDS-blue.svg)](https://neo4j.com/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-teal.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/Frontend-React%2018%20%2B%20D3-cyan.svg)](https://react.dev/)
-[![Tests](https://img.shields.io/badge/Tests-158%20Passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-246%20Passed-brightgreen.svg)](tests/)
 
 > **Enterprise-Grade FinTech & AML Graph Analytics System** detecting multi-entity suspicious financial syndicates using high-throughput stream ingestion, graph topological pattern detection, Neo4j Graph Data Science (GDS) algorithms, real-time WebSockets, cryptographic case management with SHA-256 evidence vaults, automated fraud network discovery, windowed behavioral anomaly detection, and normalized ML-ready feature generation with an interactive analyst workstation.
 
@@ -141,7 +141,8 @@ FinGraph enforces granular Role-Based Access Control:
 
 | Role | Permissions | Default Credentials |
 |---|---|---|
-| **`ADMIN`** | Full platform management, user administration, audit inspection, freeze accounts, mutate alerts, manage cases. | Username: `admin`<br>Password: `admin_secret_pass_2026` |
+| **`PLATFORM_ADMIN`** | Global tenant administration, policy governance, quotas, system telemetry, configuration versioning. | Username: `platform_admin`<br>Password: `platform_admin_secret_pass_2026` |
+| **`ADMIN`** | Tenant management, user administration, audit inspection, freeze accounts, mutate alerts, manage cases within tenant. | Username: `admin`<br>Password: `admin_secret_pass_2026` |
 | **`INVESTIGATOR`** | Graph investigation, dossier triage, freeze accounts, resolve/suppress alerts, create/manage cases, attach evidence. | Username: `investigator`<br>Password: `investigator_secret_pass_2026` |
 | **`ANALYST`** | Read-only graph navigation, search, dossier viewing, metrics exploration, view case timelines. | Username: `analyst`<br>Password: `analyst_secret_pass_2026` |
 
@@ -178,7 +179,7 @@ Run the full automated test suite covering all 11 phases:
 python -m pytest simulator/tests/ tests/ -v
 ```
 
-**Test Suite Result: 144 Passed, 2 Skipped, 0 Failures** (100% Passing).
+**Test Suite Result: 246 Passed, 2 Skipped, 0 Failures** (100% Passing).
 
 ---
 
@@ -223,3 +224,14 @@ python -m pytest simulator/tests/ tests/ -v
 * **Automated Investigation Briefs**: Multi-layer dossier synthesis with open questions and "NOT AVAILABLE" fallbacks.
 * **Investigation Workflow State Machine**: Validated state progression and case checklists.
 * **Investigation Workstations**: React pages for Case Intelligence, Alert Correlation, and Task Management.
+
+### Phase 20: Enterprise Control Plane, Multi-Tenant Architecture & Governance
+* **Multi-Tenant Domain Hierarchy**: Strict organizational isolation across Tenants, Organizations, Business Units, Investigation Teams, and Team Members.
+* **Deterministic Policy Engine**: Fine-grained access rule evaluation, rule priority ordering, condition matching, and cross-tenant access blocking.
+* **Platform Administration Boundary**: Dedicated `PLATFORM_ADMIN` persona managing platform infrastructure and tenants without customer data exposure.
+* **Granular Permissions & Extended RBAC**: 19 granular permissions with `require_permission()` factory and tenant-scoped audit logging.
+* **Configuration Versioning**: Immutable configuration lifecycle (`DRAFT` -> `ACTIVE` -> `RETIRED`) and tenant lifecycle state machine (`PENDING` -> `ACTIVE` -> `SUSPENDED` -> `DISABLED`).
+* **Control Plane REST APIs**: 22 dedicated REST endpoints mounted under `/api/v1/control-plane/*`.
+* **Real-time WebSocket Isolation**: Tenant-scoped event envelope filtering and multi-tenant broadcast routing.
+* **Enterprise Workstations**: Control Center, Tenant Management, Policy Management, User Management, and Team Management workstations.
+

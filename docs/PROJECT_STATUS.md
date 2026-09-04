@@ -20,6 +20,7 @@
 | **Phase 17** | **Autonomous Fraud Intelligence & Threat Propagation** | 🟢 **Completed** | 188 Tests Passed | Validated |
 | **Phase 18** | **Production Readiness & v1.0 Release** | 🟢 **Completed** | 199 Tests Passed | Validated |
 | **Phase 19** | **Enterprise Fraud Intelligence & Investigation Orchestration** | 🟢 **Completed** | 223 Tests Passed (24 P19) | Validated |
+| **Phase 20** | **Enterprise Control Plane, Multi-Tenant Architecture & Governance** | 🟢 **Completed** | 246 Tests Passed (23 P20) | Validated |
 
 ---
 
@@ -138,3 +139,17 @@
 - **Frontend Workstations**: `InvestigationIntelligencePage.tsx`, `AlertCorrelationPage.tsx`, and `TaskManagementPage.tsx` with sidebar navigation.
 - **Test Coverage**: 223 passed, 2 skipped, 0 failed across entire platform.
 - **Empirical Benchmarks**: Sub-millisecond P95 latencies across all operations (P95 < 0.19ms).
+
+## Phase 20: Enterprise Control Plane, Multi-Tenant Architecture & Governance (Completed)
+- **Multi-Tenant Domain Hierarchy**: Full domain models in `backend/app/tenancy/models.py` (`Tenant`, `Organization`, `BusinessUnit`, `InvestigationTeam`, `TeamMember`, `TenantQuota`, `TenantConfiguration`, `ConfigurationVersion`, `TenantUsageMetrics`).
+- **Server-Side Tenant Context & Isolation**: `TenantContext` dependency in `backend/app/tenancy/context.py` resolving tenant ID, user ID, role, and granular permissions with cross-tenant isolation enforcement.
+- **Platform Administration vs. Investigation Boundary**: Distinct `PLATFORM_ADMIN` persona with dedicated infrastructure management capabilities and strict boundaries preventing unrestricted browsing of customer investigation data.
+- **Granular Permissions & Extended RBAC**: 19 granular permissions with `require_permission()` dependency factory and role hierarchy in `backend/app/security/`.
+- **Deterministic Policy Engine**: Rule priority evaluation with `ALLOW`/`DENY` effects, condition matching (roles, users, time windows, IP CIDRs), and immediate cross-tenant access blocking in `backend/app/policies/`.
+- **Configuration Versioning & Tenant Lifecycle**: Immutable `ConfigurationVersion` lifecycle (`DRAFT` -> `ACTIVE` -> `RETIRED`) and `TenantStatus` state progression (`PENDING`, `ACTIVE`, `SUSPENDED`, `DISABLED`).
+- **Control Plane REST APIs**: 22 dedicated endpoints mounted under `/api/v1/control-plane/*`.
+- **Real-Time WebSocket Tenant Isolation**: Tenant-scoped event envelope filtering in `WebSocketConnectionManager`.
+- **Frontend Enterprise Workstations**: React control plane workstations (`EnterpriseControlCenterPage`, `TenantManagementPage`, `PolicyManagementPage`, `UserManagementPage`, `TeamManagementPage`).
+- **Test Coverage**: 246 passed, 2 skipped, 0 failed across all 20 phases.
+- **Empirical Benchmarks**: Sub-millisecond P95 latencies for policy evaluation (0.005ms) and tenant resolution (0.000ms), 100-run stability in `docs/performance/phase-20.md`.
+
