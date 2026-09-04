@@ -12,6 +12,7 @@ from backend.app.dependencies import (
     get_risk_engine,
 )
 from backend.app.main import app
+from backend.app.security.jwt import create_access_token
 
 
 def test_money_trail_and_search_endpoints():
@@ -50,8 +51,11 @@ def test_money_trail_and_search_endpoints():
     client = TestClient(app)
 
     try:
+        token = create_access_token({"sub": "usr_analyst", "username": "analyst", "role": "ANALYST"})
+        headers = {"Authorization": f"Bearer {token}"}
+
         # 1. Money trail
-        trail_res = client.get("/api/v1/investigation/money-trail?from_account=A001&to_account=A006")
+        trail_res = client.get("/api/v1/investigation/money-trail?from_account=A001&to_account=A006", headers=headers)
         assert trail_res.status_code == 200
         trail_data = trail_res.json()["data"]
         assert len(trail_data) == 1
@@ -60,7 +64,7 @@ def test_money_trail_and_search_endpoints():
         assert trail_data[0]["hop_count"] == 2
 
         # 2. Search
-        search_res = client.get("/api/v1/investigation/search?q=TX_FUN")
+        search_res = client.get("/api/v1/investigation/search?q=TX_FUN", headers=headers)
         assert search_res.status_code == 200
         search_data = search_res.json()["data"]
         assert "TX_FUN_001" in search_data["transaction_ids"]

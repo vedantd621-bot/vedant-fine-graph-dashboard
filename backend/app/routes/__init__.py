@@ -8,6 +8,9 @@ from backend.app.routes.graph import router as graph_router
 from backend.app.routes.dashboard import router as dashboard_router
 from backend.app.routes.investigation import router as investigation_router
 from backend.app.routes.websocket import router as websocket_router
+from backend.app.routes.auth import router as auth_router
+from backend.app.routes.admin import router as admin_router
+from backend.app.routes.metrics import router as metrics_router
 
 __all__ = [
     "health_router",
@@ -17,4 +20,7 @@ __all__ = [
     "dashboard_router",
     "investigation_router",
     "websocket_router",
+    "auth_router",
+    "admin_router",
+    "metrics_router",
 ]

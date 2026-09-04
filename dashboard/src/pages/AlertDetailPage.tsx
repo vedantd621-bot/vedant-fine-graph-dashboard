@@ -12,6 +12,7 @@ import {
 import { apiClient } from '../api/client';
 import { AlertDetail, AlertStatus, GraphPayload } from '../types';
 import { InteractiveGraph } from '../components/graph/InteractiveGraph';
+import { useAuth } from '../auth/AuthContext';
 
 interface AlertDetailPageProps {
   alertId: string;
@@ -24,6 +25,8 @@ export const AlertDetailPage: React.FC<AlertDetailPageProps> = ({
   onBack,
   onSelectAccount,
 }) => {
+  const { hasRole } = useAuth();
+  const canMutate = hasRole(['INVESTIGATOR', 'ADMIN']);
   const [alert, setAlert] = useState<AlertDetail | null>(null);
   const [graphData, setGraphData] = useState<GraphPayload | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -95,32 +98,40 @@ export const AlertDetailPage: React.FC<AlertDetailPageProps> = ({
         {/* Status Action Buttons */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-400 mr-1">Status:</span>
-          {alert.status !== 'INVESTIGATING' && (
-            <button
-              disabled={updating}
-              onClick={() => handleStatusUpdate('INVESTIGATING')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30 text-xs font-semibold transition-colors"
-            >
-              <Clock className="h-3.5 w-3.5" /> Mark Investigating
-            </button>
-          )}
-          {alert.status !== 'RESOLVED' && (
-            <button
-              disabled={updating}
-              onClick={() => handleStatusUpdate('RESOLVED')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 text-xs font-semibold transition-colors"
-            >
-              <CheckCircle2 className="h-3.5 w-3.5" /> Resolve Alert
-            </button>
-          )}
-          {alert.status !== 'DISMISSED' && (
-            <button
-              disabled={updating}
-              onClick={() => handleStatusUpdate('DISMISSED')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 text-xs font-semibold transition-colors"
-            >
-              <XCircle className="h-3.5 w-3.5" /> Dismiss
-            </button>
+          {canMutate ? (
+            <>
+              {alert.status !== 'INVESTIGATING' && (
+                <button
+                  disabled={updating}
+                  onClick={() => handleStatusUpdate('INVESTIGATING')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30 text-xs font-semibold transition-colors"
+                >
+                  <Clock className="h-3.5 w-3.5" /> Mark Investigating
+                </button>
+              )}
+              {alert.status !== 'RESOLVED' && (
+                <button
+                  disabled={updating}
+                  onClick={() => handleStatusUpdate('RESOLVED')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 text-xs font-semibold transition-colors"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Resolve Alert
+                </button>
+              )}
+              {alert.status !== 'DISMISSED' && (
+                <button
+                  disabled={updating}
+                  onClick={() => handleStatusUpdate('DISMISSED')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 text-xs font-semibold transition-colors"
+                >
+                  <XCircle className="h-3.5 w-3.5" /> Dismiss
+                </button>
+              )}
+            </>
+          ) : (
+            <span className="text-xs font-medium text-slate-400 px-2.5 py-1 rounded bg-slate-800 border border-slate-700">
+              {alert.status} <span className="text-[10px] text-slate-500">(Read-Only)</span>
+            </span>
           )}
         </div>
       </div>

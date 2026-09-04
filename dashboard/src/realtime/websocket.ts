@@ -31,16 +31,23 @@ export class FinGraphWebSocketClient {
     }
   }
 
-  public connect(): void {
+  public connect(tokenOverride?: string): void {
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
 
+    const token = tokenOverride || localStorage.getItem('fingraph_token');
+    if (!token) {
+      this.setStatus('DISCONNECTED');
+      return;
+    }
+
+    const wsUrl = `${this.url}?token=${encodeURIComponent(token)}`;
     this.shouldReconnect = true;
     this.setStatus('CONNECTING');
 
     try {
-      this.ws = new WebSocket(this.url);
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         this.setStatus('LIVE');

@@ -7,14 +7,33 @@ import { AlertDetailPage } from './pages/AlertDetailPage';
 import { AccountsPage } from './pages/AccountsPage';
 import { AccountDetailPage } from './pages/AccountDetailPage';
 import { InvestigationPage } from './pages/InvestigationPage';
+import { AuthProvider, useAuth } from './auth/AuthContext';
+import { LoginPage } from './auth/LoginPage';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { RealtimeProvider } from './realtime/RealtimeContext';
 import { AlertToast } from './components/realtime/AlertToast';
 
 export const AppContent: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin"></div>
+          <span className="text-xs uppercase font-semibold text-slate-400 tracking-wider">Loading FinGraph...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const handleSelectAccount = (accountId: string) => {
     setSelectedAccountId(accountId);
@@ -32,75 +51,79 @@ export const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
-      <AlertToast onSelectAlert={handleSelectAlert} />
+    <RealtimeProvider>
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
+        <AlertToast onSelectAlert={handleSelectAlert} />
 
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onSearch={handleSearch}
-        onRefresh={() => window.location.reload()}
-        onSelectAlert={handleSelectAlert}
-        onSelectAccount={handleSelectAccount}
-      />
-
-      <div className="flex-1 flex overflow-hidden">
-        <Sidebar
-          activeTab={activeTab.startsWith('account') ? 'accounts' : activeTab.startsWith('alert') ? 'alerts' : activeTab}
+        <Navbar
+          activeTab={activeTab}
           setActiveTab={setActiveTab}
+          onSearch={handleSearch}
+          onRefresh={() => window.location.reload()}
+          onSelectAlert={handleSelectAlert}
+          onSelectAccount={handleSelectAccount}
         />
 
-        <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full">
-          {activeTab === 'dashboard' && (
-            <DashboardPage
-              onSelectAccount={handleSelectAccount}
-              onSelectAlert={handleSelectAlert}
-              onNavigate={setActiveTab}
-            />
-          )}
+        <div className="flex-1 flex overflow-hidden">
+          <Sidebar
+            activeTab={activeTab.startsWith('account') ? 'accounts' : activeTab.startsWith('alert') ? 'alerts' : activeTab}
+            setActiveTab={setActiveTab}
+          />
 
-          {activeTab === 'alerts' && (
-            <AlertsPage onSelectAlert={handleSelectAlert} />
-          )}
+          <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full">
+            {activeTab === 'dashboard' && (
+              <DashboardPage
+                onSelectAccount={handleSelectAccount}
+                onSelectAlert={handleSelectAlert}
+                onNavigate={setActiveTab}
+              />
+            )}
 
-          {activeTab === 'alert-detail' && selectedAlertId && (
-            <AlertDetailPage
-              alertId={selectedAlertId}
-              onBack={() => setActiveTab('alerts')}
-              onSelectAccount={handleSelectAccount}
-            />
-          )}
+            {activeTab === 'alerts' && (
+              <AlertsPage onSelectAlert={handleSelectAlert} />
+            )}
 
-          {activeTab === 'accounts' && (
-            <AccountsPage onSelectAccount={handleSelectAccount} />
-          )}
+            {activeTab === 'alert-detail' && selectedAlertId && (
+              <AlertDetailPage
+                alertId={selectedAlertId}
+                onBack={() => setActiveTab('alerts')}
+                onSelectAccount={handleSelectAccount}
+              />
+            )}
 
-          {activeTab === 'account-detail' && selectedAccountId && (
-            <AccountDetailPage
-              accountId={selectedAccountId}
-              onBack={() => setActiveTab('accounts')}
-              onSelectAccount={handleSelectAccount}
-            />
-          )}
+            {activeTab === 'accounts' && (
+              <AccountsPage onSelectAccount={handleSelectAccount} />
+            )}
 
-          {activeTab === 'investigation' && (
-            <InvestigationPage
-              onSelectAccount={handleSelectAccount}
-              onSelectAlert={handleSelectAlert}
-              initialQuery={searchQuery}
-            />
-          )}
-        </main>
+            {activeTab === 'account-detail' && selectedAccountId && (
+              <AccountDetailPage
+                accountId={selectedAccountId}
+                onBack={() => setActiveTab('accounts')}
+                onSelectAccount={handleSelectAccount}
+              />
+            )}
+
+            {activeTab === 'investigation' && (
+              <InvestigationPage
+                onSelectAccount={handleSelectAccount}
+                onSelectAlert={handleSelectAlert}
+                initialQuery={searchQuery}
+              />
+            )}
+          </main>
+        </div>
       </div>
-    </div>
+    </RealtimeProvider>
   );
 };
 
 export const App: React.FC = () => {
   return (
-    <RealtimeProvider>
-      <AppContent />
-    </RealtimeProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

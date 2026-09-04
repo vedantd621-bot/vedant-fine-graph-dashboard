@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from detection.src.models import AlertStatus, DetectionEvidence, DetectionType, Severity
 from analytics.src.models import RiskLevel
+from backend.app.models.common import PaginationMeta
 
 
 class AlertSummary(BaseModel):
@@ -23,6 +24,12 @@ class AlertSummary(BaseModel):
     description: str
     total_amount: Optional[float] = None
     currency: str = "USD"
+
+
+class AlertListResponse(BaseModel):
+    """Paginated list of alerts."""
+    data: List[AlertSummary]
+    pagination: PaginationMeta
 
 
 class AlertDetail(BaseModel):

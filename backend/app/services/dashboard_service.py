@@ -33,16 +33,20 @@ class DashboardService:
 
     def get_summary(self) -> DashboardSummary:
         """Retrieves core executive KPI metrics from Neo4j."""
-        cypher = """
-        MATCH (a:Account)
-        OPTIONAL MATCH ()-[r:TRANSFERRED_TO]->()
+        cypher_acc = "MATCH (a:Account) RETURN count(a) AS total_accounts"
+        records_acc = self.client.execute_query(cypher_acc)
+        acc_cnt = int(records_acc[0].get("total_accounts", 0)) if records_acc else 0
+
+        cypher_tx = """
+        MATCH ()-[r:TRANSFERRED_TO]->()
         RETURN
-            count(DISTINCT a) AS total_accounts,
-            count(DISTINCT r) AS total_transactions,
+            count(r) AS total_transactions,
             coalesce(sum(r.amount), 0.0) AS total_volume
         """
-        records = self.client.execute_query(cypher)
-        res = records[0] if records else {"total_accounts": 0, "total_transactions": 0, "total_volume": 0.0}
+        records_tx = self.client.execute_query(cypher_tx)
+        tx_row = records_tx[0] if records_tx else {}
+        total_tx = int(tx_row.get("total_transactions", tx_row.get("total_tx", 0)))
+        total_vol = float(tx_row.get("total_volume", tx_row.get("total_vol", 0.0)))
 
         # Query all accounts to get accurate risk counts
         accounts, _ = self.account_service.list_accounts(page=1, page_size=1000)
@@ -51,19 +55,19 @@ class DashboardService:
 
         # Query alerts
         alerts, _ = self.alert_service.list_alerts(page=1, page_size=1000)
-        open_count = sum(1 for a in alerts if a.status.value == "OPEN")
-        inv_count = sum(1 for a in alerts if a.status.value == "INVESTIGATING")
-        res_count = sum(1 for a in alerts if a.status.value == "RESOLVED")
+        open_count = sum(1 for a in alerts if getattr(a.status, "value", a.status) == "OPEN")
+        inv_count = sum(1 for a in alerts if getattr(a.status, "value", a.status) == "INVESTIGATING")
+        res_count = sum(1 for a in alerts if getattr(a.status, "value", a.status) == "RESOLVED")
 
         return DashboardSummary(
-            total_accounts=int(res["total_accounts"]),
-            total_transactions=int(res["total_transactions"]),
+            total_accounts=acc_cnt,
+            total_transactions=total_tx,
             open_alerts=open_count,
             investigating_alerts=inv_count,
             resolved_alerts=res_count,
             high_risk_accounts=high_risk_count,
             critical_risk_accounts=crit_risk_count,
-            total_transaction_volume=float(res["total_volume"]),
+            total_transaction_volume=total_vol,
             currency="USD",
             updated_at=datetime.now(timezone.utc),
         )
@@ -112,6 +116,14 @@ class DashboardService:
             )
 
         return points
+
+    def get_dashboard_summary(self) -> DashboardSummary:
+        """Alias for get_summary."""
+        return self.get_summary()
+
+    def get_alert_trend(self) -> List[AlertTrendPoint]:
+        """Alias for get_alert_trends."""
+        return self.get_alert_trends()
 
     def get_top_risk_accounts(self, limit: int = 10) -> List[AccountSummary]:
         """Returns top accounts ordered by calculated risk score."""

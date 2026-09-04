@@ -1,11 +1,12 @@
 """
 FinGraph FastAPI Dependency Injection Provider.
-Provides singleton Neo4j client, DetectionEngine, GDSManager, and RiskEngine instances to route handlers.
+Provides singleton Neo4j client, DetectionEngine, GDSManager, RiskEngine, and service instances to route handlers.
 """
 import logging
 import sys
 from pathlib import Path
 from typing import Generator
+from fastapi import Depends
 
 # Ensure project root in sys.path
 root_dir = Path(__file__).resolve().parent.parent.parent
@@ -18,6 +19,11 @@ from detection.src.engine import DetectionEngine
 from analytics.src.gds_manager import GDSManager
 from analytics.src.risk_engine import ExplainableRiskEngine
 from backend.app.config import ApiConfig, get_api_config
+from backend.app.services.alert_service import AlertService
+from backend.app.services.account_service import AccountService
+from backend.app.services.graph_service import GraphService
+from backend.app.services.dashboard_service import DashboardService
+from backend.app.services.investigation_service import InvestigationService
 
 logger = logging.getLogger("FinGraph.Dependencies")
 
@@ -42,34 +48,96 @@ def get_neo4j_client() -> Neo4jClient:
     return _global_client
 
 
-def get_detection_engine() -> DetectionEngine:
+def get_detection_engine(client: Neo4jClient = Depends(get_neo4j_client)) -> DetectionEngine:
     """Returns singleton DetectionEngine."""
     global _global_detection_engine
     if _global_detection_engine is None:
-        client = get_neo4j_client()
         _global_detection_engine = DetectionEngine(client=client)
     return _global_detection_engine
 
 
-def get_gds_manager() -> GDSManager:
+def get_gds_manager(client: Neo4jClient = Depends(get_neo4j_client)) -> GDSManager:
     """Returns singleton GDSManager."""
     global _global_gds_manager
     if _global_gds_manager is None:
-        client = get_neo4j_client()
         _global_gds_manager = GDSManager(client=client)
     return _global_gds_manager
 
 
-def get_risk_engine() -> ExplainableRiskEngine:
+def get_risk_engine(
+    client: Neo4jClient = Depends(get_neo4j_client),
+    detection_engine: DetectionEngine = Depends(get_detection_engine),
+    gds_manager: GDSManager = Depends(get_gds_manager),
+) -> ExplainableRiskEngine:
     """Returns singleton ExplainableRiskEngine."""
     global _global_risk_engine
     if _global_risk_engine is None:
-        client = get_neo4j_client()
-        det_eng = get_detection_engine()
-        gds_mgr = get_gds_manager()
         _global_risk_engine = ExplainableRiskEngine(
             client=client,
-            detection_engine=det_eng,
-            gds_manager=gds_mgr,
+            detection_engine=detection_engine,
+            gds_manager=gds_manager,
         )
     return _global_risk_engine
+
+
+def get_alert_service(
+    client: Neo4jClient = Depends(get_neo4j_client),
+    detection_engine: DetectionEngine = Depends(get_detection_engine),
+    risk_engine: ExplainableRiskEngine = Depends(get_risk_engine),
+) -> AlertService:
+    """Returns AlertService instance."""
+    return AlertService(
+        client=client,
+        detection_engine=detection_engine,
+        risk_engine=risk_engine,
+    )
+
+
+def get_account_service(
+    client: Neo4jClient = Depends(get_neo4j_client),
+    risk_engine: ExplainableRiskEngine = Depends(get_risk_engine),
+) -> AccountService:
+    """Returns AccountService instance."""
+    return AccountService(
+        client=client,
+        risk_engine=risk_engine,
+    )
+
+
+def get_graph_service(
+    client: Neo4jClient = Depends(get_neo4j_client),
+    risk_engine: ExplainableRiskEngine = Depends(get_risk_engine),
+) -> GraphService:
+    """Returns GraphService instance."""
+    return GraphService(
+        client=client,
+        risk_engine=risk_engine,
+    )
+
+
+def get_dashboard_service(
+    client: Neo4jClient = Depends(get_neo4j_client),
+    account_service: AccountService = Depends(get_account_service),
+    alert_service: AlertService = Depends(get_alert_service),
+) -> DashboardService:
+    """Returns DashboardService instance."""
+    return DashboardService(
+        client=client,
+        account_service=account_service,
+        alert_service=alert_service,
+    )
+
+
+def get_investigation_service(
+    client: Neo4jClient = Depends(get_neo4j_client),
+    detection_engine: DetectionEngine = Depends(get_detection_engine),
+    account_service: AccountService = Depends(get_account_service),
+    alert_service: AlertService = Depends(get_alert_service),
+) -> InvestigationService:
+    """Returns InvestigationService instance."""
+    return InvestigationService(
+        client=client,
+        detection_engine=detection_engine,
+        account_service=account_service,
+        alert_service=alert_service,
+    )

@@ -27,6 +27,30 @@ const api = axios.create({
   },
 });
 
+// Request interceptor: attach JWT token if stored
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('fingraph_token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Response interceptor: handle 401 Unauthorized by clearing session
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('fingraph_token');
+      localStorage.removeItem('fingraph_user');
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('login')) {
+        window.location.reload();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const apiClient = {
   // Health
   getHealth: async () => {

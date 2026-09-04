@@ -33,8 +33,14 @@ class GraphEdge(BaseModel):
 
 class GraphPayload(BaseModel):
     """Complete graph structure consumed by D3 / React Flow graph renderers."""
+    focal_account_id: Optional[str] = None
     nodes: List[GraphNode] = Field(default_factory=list)
     edges: List[GraphEdge] = Field(default_factory=list)
+    links: Optional[List[GraphEdge]] = None
     is_truncated: bool = False
     total_nodes: int = 0
     total_edges: int = 0
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.links is None:
+            self.links = self.edges

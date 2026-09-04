@@ -29,8 +29,11 @@ class AccountService:
     def list_accounts(
         self,
         risk_level: Optional[RiskLevel] = None,
+        min_score: Optional[float] = None,
+        max_score: Optional[float] = None,
         min_risk_score: Optional[float] = None,
         max_risk_score: Optional[float] = None,
+        community_id: Optional[int] = None,
         search: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
@@ -55,7 +58,10 @@ class AccountService:
             b.name AS bank_name
         """
         meta_records = self.client.execute_query(cypher_meta)
-        meta_map = {r["account_id"]: r for r in meta_records}
+        meta_map = {r["account_id"]: r for r in meta_records if isinstance(r, dict) and "account_id" in r}
+
+        effective_min = min_score if min_score is not None else min_risk_score
+        effective_max = max_score if max_score is not None else max_risk_score
 
         summaries: List[AccountSummary] = []
         for rs in all_risk_scores:
@@ -66,10 +72,13 @@ class AccountService:
             if risk_level and rs.risk_level != risk_level:
                 continue
 
-            if min_risk_score is not None and rs.score < min_risk_score:
+            if effective_min is not None and rs.score < effective_min:
                 continue
 
-            if max_risk_score is not None and rs.score > max_risk_score:
+            if effective_max is not None and rs.score > effective_max:
+                continue
+
+            if community_id is not None and rs.features.louvain_community_id != community_id:
                 continue
 
             meta = meta_map.get(acc_id, {})

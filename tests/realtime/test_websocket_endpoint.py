@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.dependencies import get_neo4j_client
 from backend.app.main import app
+from backend.app.security.jwt import create_access_token
 
 
 def test_websocket_v1_connection_and_ping_pong():
@@ -17,7 +18,8 @@ def test_websocket_v1_connection_and_ping_pong():
     client = TestClient(app)
 
     try:
-        with client.websocket_connect("/api/v1/ws") as websocket:
+        token = create_access_token({"sub": "usr_analyst", "username": "analyst", "role": "ANALYST"})
+        with client.websocket_connect(f"/api/v1/ws?token={token}") as websocket:
             # 1. Receive welcome message
             welcome_data = websocket.receive_text()
             welcome_json = json.loads(welcome_data)

@@ -1,6 +1,6 @@
 """
 FinGraph Backend API Configuration.
-Loads environment variables for FastAPI server, CORS, WebSocket real-time bus, and Neo4j connectivity.
+Loads environment variables for FastAPI server, Security, RBAC, Rate Limiting, CORS, WebSocket, and Neo4j connectivity.
 """
 import os
 from typing import List
@@ -17,6 +17,7 @@ class ApiConfig(BaseModel):
     app_env: str = Field(default_factory=lambda: os.getenv("APP_ENV", "development"))
     api_host: str = Field(default_factory=lambda: os.getenv("API_HOST", "0.0.0.0"))
     api_port: int = Field(default_factory=lambda: int(os.getenv("API_PORT", "8000")))
+    api_workers: int = Field(default_factory=lambda: int(os.getenv("API_WORKERS", "1")))
     debug: bool = Field(default_factory=lambda: os.getenv("API_DEBUG", "false").lower() == "true")
 
     # CORS settings
@@ -30,6 +31,21 @@ class ApiConfig(BaseModel):
             if origin.strip()
         ]
     )
+
+    # Authentication & JWT Configuration
+    jwt_secret: str = Field(default_factory=lambda: os.getenv("JWT_SECRET", "fingraph_jwt_super_secret_change_in_production_key_2026"))
+    jwt_algorithm: str = Field(default_factory=lambda: os.getenv("JWT_ALGORITHM", "HS256"))
+    jwt_access_token_minutes: int = Field(default_factory=lambda: int(os.getenv("JWT_ACCESS_TOKEN_MINUTES", "60")))
+
+    # Security & Rate Limiting Configuration
+    security_headers_enabled: bool = Field(default_factory=lambda: os.getenv("SECURITY_HEADERS_ENABLED", "true").lower() == "true")
+    hsts_enabled: bool = Field(default_factory=lambda: os.getenv("HSTS_ENABLED", "false").lower() == "true")
+    rate_limit_enabled: bool = Field(default_factory=lambda: os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true")
+    rate_limit_requests: int = Field(default_factory=lambda: int(os.getenv("RATE_LIMIT_REQUESTS", "100")))
+    rate_limit_window_seconds: int = Field(default_factory=lambda: int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60")))
+    max_request_body_bytes: int = Field(default_factory=lambda: int(os.getenv("MAX_REQUEST_BODY_BYTES", "2097152")))
+    query_timeout_seconds: int = Field(default_factory=lambda: int(os.getenv("QUERY_TIMEOUT_SECONDS", "30")))
+    metrics_enabled: bool = Field(default_factory=lambda: os.getenv("METRICS_ENABLED", "true").lower() == "true")
 
     # Neo4j Connectivity
     neo4j_uri: str = Field(default_factory=lambda: os.getenv("NEO4J_URI", "bolt://localhost:7687"))

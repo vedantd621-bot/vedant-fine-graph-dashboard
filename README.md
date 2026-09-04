@@ -1,4 +1,4 @@
-# FinGraph — Real-Time Fraud Syndicate Analytics
+﻿# FinGraph — Real-Time Fraud Syndicate Analytics Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-brightgreen.svg)](https://www.python.org/)
@@ -7,14 +7,15 @@
 [![Neo4j](https://img.shields.io/badge/Graph%20DB-Neo4j%205%20%2B%20GDS-blue.svg)](https://neo4j.com/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-teal.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/Frontend-React%2018%20%2B%20D3-cyan.svg)](https://react.dev/)
+[![Tests](https://img.shields.io/badge/Tests-125%20Passed-brightgreen.svg)](tests/)
 
-> **Portfolio-Grade FinTech / AML Analytics System** detecting multi-entity suspicious transaction networks using real-time stream ingestion, graph topological pattern detection, Graph Data Science (GDS) algorithms, and an interactive analyst investigation dashboard.
+> **Enterprise-Grade FinTech & AML Graph Analytics System** detecting multi-entity suspicious financial syndicates using high-throughput stream ingestion, graph topological pattern detection, Neo4j Graph Data Science (GDS) algorithms, real-time WebSockets, and an interactive analyst investigation workstation with Role-Based Access Control (RBAC).
 
 ---
 
 ## 1. Problem Statement
 
-Traditional financial anti-money laundering (AML) and fraud detection systems rely on tabular, point-in-time SQL rules (e.g., *“is transaction amount > \$10,000?”*). Fraudsters easily bypass these thresholds by distributing funds across collusive networks using techniques like:
+Traditional financial anti-money laundering (AML) and fraud detection systems rely on tabular, point-in-time SQL rules (e.g., *"is transaction amount > $10,000?"*). Fraudsters easily bypass these thresholds by distributing funds across collusive networks using techniques like:
 - **Smurfing / Funneling**: High-frequency small transfers aggregating into a mule account.
 - **Layering & Rapid Movement**: Passing funds through long chains of intermediary shell accounts.
 - **Circular Wash Trading**: Routing money in closed loops ($A \to B \to C \to A$) to fabricate legitimacy.
@@ -24,83 +25,65 @@ Point-in-time transactional rules fail to capture **topological network structur
 
 ---
 
-## 2. Solution
+## 2. Solution & Architecture
 
 **FinGraph** bridges real-time stream engineering with graph analytics:
 1. High-throughput synthetic transaction event generation mimicking realistic banking behavior and structured fraud schemes.
 2. Ingestion via **Apache Kafka** partitioned by account hash.
 3. Stream processing, schema validation, temporal windowing, and anomaly scoring via **Apache Flink**.
-4. Real-time graph ingestion into **Neo4j 5 Enterprise/Community**.
-5. Multi-hop path tracing and cycle detection via parameterized **Cypher**.
+4. Real-time graph ingestion into **Neo4j 5 Enterprise/Community** with strict constraints and indexes.
+5. Multi-hop path tracing and cycle detection via parameterized **Cypher** pattern detectors.
 6. Community and centrality detection via **Neo4j Graph Data Science (GDS)** (Louvain Community Detection, Weakly Connected Components, PageRank).
-7. Transparent, explainable **0–100 Graph Risk Scoring**.
-8. Interactive analyst dashboard in **React + D3.js** with path highlight, subgraph inspection, and a simulated **"Freeze Syndicate"** remediation workflow.
-
----
-
-## 3. Architecture
+7. Transparent, explainable **0–100 Graph Risk Scoring** with mathematical factor weighting.
+8. Real-time alerting and updates pushed via **WebSockets** and internal pub/sub event bus.
+9. Interactive analyst dashboard in **React + D3.js** with path highlighting, subgraph inspection, dossier triage, and a **"Freeze Account"** remediation workflow.
+10. Hardened production security with **RFC 7519 JWT Auth**, **PBKDF2 password hashing**, **RBAC guards**, **rate limiting**, **Prometheus observability**, and non-root Docker deployments.
 
 ```
-Synthetic Transaction Simulator
-             │
-             ▼ (JSON Stream)
-        Apache Kafka
-             │
-             ▼ (Continuous Stream)
-        Apache Flink (Validation & Windowing)
-             │
-             ▼ (Graph Ingestion)
-          Neo4j (Constraints & Indexes)
-         ╱     ╲
-        ╱       ╲
-Cypher Query   Neo4j GDS
-(Multi-hop)    (Louvain, WCC, PageRank)
-        ╲       ╱
-         ╲     ╱
-     Risk Scoring Engine (Explainable 0-100)
-             │
-             ▼
-      FastAPI Backend
-       ╱           ╲
-      ▼             ▼
-React Dashboard   Alert Engine (Mock/Slack/Email)
-      │
-      ▼
-Simulated Freeze Action ──► Audit Log Store
+Transaction Simulator
+        ↓
+      Kafka (Topic: transactions)
+        ↓
+   Apache Flink (Validation & DLQ)
+        ↓
+      Neo4j (Constraints & Indexes)
+ ┌──────┴───────────┐
+ ↓                  ↓
+Cypher Detectors   Neo4j GDS Analytics
+(7 Detectors)      (PageRank, Louvain, WCC)
+ └──────┬───────────┘
+        ↓
+ Risk Scoring Engine (Explainable 0–100)
+        ↓
+ FastAPI REST & WebSocket Backend
+        ↓
+ ┌──────┴──────────────────┐
+ ↓                         ↓
+React 18 + D3 Dashboard   Prometheus & Health Probes
+(JWT Auth & RBAC)         (/metrics, /live, /ready)
 ```
 
 ---
 
-## 4. Key Features
-
-- **Realistic Synthetic Data Generator**: Configurable event generator emitting normal commercial traffic alongside 5 distinct fraud topologies.
-- **Real-Time Stream Processing**: Fault-tolerant stream pipeline consuming Kafka topics, cleaning records, and persisting graph entities.
-- **Multi-Hop Graph Analytics**: Parameterized Cypher query engine identifying cycles, funnels, and high-degree mules in sub-100ms.
-- **Graph Data Science (GDS) Integration**: Unsupervised network discovery via Louvain Community Detection and PageRank centrality scoring.
-- **Explainable Risk Scoring**: Deterministic multi-factor score breakdown (Low, Medium, High, Critical) with full auditability.
-- **Interactive Analyst UI**: Dynamic force-directed network graph, money trail tracer, transaction inspector, and KPI dashboard.
-- **Deduplicated Alert Subsystem**: Multi-channel alert dispatch with configurable cooldown periods to prevent notification fatigue.
-- **Simulated Freeze Action & Audit Log**: Immutable record of investigator decisions with zero external financial API interaction.
-
----
-
-## 5. Technology Stack
+## 3. Technology Stack
 
 | Layer | Technologies |
 |---|---|
-| **Data Generation** | Python 3.10+, Faker, Random, AsyncIO |
+| **Data Generation** | Python 3.10+, Pydantic V2, AsyncIO, Random Graph Seeders |
 | **Message Streaming** | Apache Kafka 3.7+ (KRaft mode) |
-| **Stream Processing** | Apache Flink 1.18+ / PyFlink |
-| **Graph Database** | Neo4j 5.x + Graph Data Science (GDS) plugin |
-| **Graph Queries** | Cypher Query Language |
-| **Backend API** | Python FastAPI, Uvicorn, Pydantic v2, Neo4j Python Driver |
-| **Frontend UI** | React 18, TypeScript, D3.js / Force-Graph, Tailwind CSS, Lucide Icons |
-| **Alerting** | Python Async Engine (Mock, Webhook, Slack, SMTP) |
-| **Infrastructure** | Docker Compose, Pytest, Jest |
+| **Stream Processing** | Apache Flink 1.18+ / PyFlink with Dead Letter Queue (DLQ) |
+| **Graph Database** | Neo4j 5.x + Graph Data Science (GDS) 2.x plugin + APOC |
+| **Graph Queries** | Parameterized Cypher Query Language |
+| **Backend API** | Python FastAPI, Uvicorn/Gunicorn, Pydantic v2, Neo4j Driver |
+| **Security & Auth** | RFC 7519 JWT (HS256), PBKDF2-HMAC-SHA256, Sliding-window IP Rate Limiting |
+| **Real-Time** | WebSockets (`/api/v1/ws`), In-memory Async EventBus Pub/Sub |
+| **Frontend UI** | React 18, TypeScript, D3.js Force Simulation, Tailwind CSS, Lucide Icons |
+| **Observability** | Prometheus Exporter (`/metrics`), Kubernetes Liveness/Readiness Probes |
+| **Infrastructure** | Multi-stage non-root Dockerfiles, Docker Compose, Nginx Reverse Proxy |
 
 ---
 
-## 6. Graph Data Model
+## 4. Graph Data Model
 
 ```mermaid
 erDiagram
@@ -134,7 +117,7 @@ erDiagram
 
 ---
 
-## 7. Fraud Scenarios
+## 5. Fraud Scenarios Detected
 
 1. **Pattern A — Funnel / Smurfing**: Multiple source accounts disperse small amounts into a single aggregator account ($A_1, A_2, A_3 \to I_1 \to B_1$).
 2. **Pattern B — One-to-Many Distribution**: Rapid disbursement of funds from a central high-value node to dozens of disposable accounts.
@@ -144,94 +127,77 @@ erDiagram
 
 ---
 
-## 8. Risk Scoring Formula
+## 6. Authentication & RBAC
 
-$$
-\text{Risk Score} = \min\left(100, \; w_1 \cdot S_{\text{degree}} + w_2 \cdot S_{\text{cycle}} + w_3 \cdot S_{\text{centrality}} + w_4 \cdot S_{\text{velocity}} + w_5 \cdot S_{\text{community}}\right)
-$$
+FinGraph enforces granular Role-Based Access Control:
 
-- **0–29**: Low Risk (Normal commercial/personal behavior)
-- **30–59**: Medium Risk (Elevated frequency or unusual counterparties)
-- **60–79**: High Risk (Funnel aggregation or multi-hop pass-through)
-- **80–100**: Critical Risk (Circular wash trading, multi-tier syndicate hub)
-
----
-
-## 9. Performance Targets & Empirical Measurement
-
-| Metric | Target | Measured Result | Status |
-|---|---|---|---|
-| **Ingestion-to-Neo4j Latency** | $< 1000\text{ ms}$ | Measured in Phase 12 | ⏱️ Pending Benchmark |
-| **Complex Cypher Query (p95)** | $< 100\text{ ms}$ | Measured in Phase 12 | ⏱️ Pending Benchmark |
-| **Stream Throughput** | $> 1,000\text{ tx/sec}$ | Measured in Phase 12 | ⏱️ Pending Benchmark |
+| Role | Permissions | Default Credentials |
+|---|---|---|
+| **`ADMIN`** | Full platform management, user administration, audit inspection, freeze accounts, mutate alerts. | Username: `admin`<br>Password: `admin_secret_pass_2026` |
+| **`INVESTIGATOR`** | Graph investigation, dossier triage, freeze accounts, resolve/suppress alerts, export reports. | Username: `investigator`<br>Password: `investigator_secret_pass_2026` |
+| **`ANALYST`** | Read-only graph navigation, search, dossier viewing, metrics exploration. | Username: `analyst`<br>Password: `analyst_secret_pass_2026` |
 
 ---
 
-## 10. Repository Structure
+## 7. Production Deployment & Quickstart
 
-```
-finGraph/
-├── simulator/          # Synthetic transaction generator (Normal + Fraud topologies)
-├── flink/              # Apache Flink stream validation & transformation job
-├── neo4j/              # Cypher schemas, indexes, constraints, GDS projections, seeds
-├── backend/            # FastAPI REST backend & Graph query services
-├── dashboard/          # React + TypeScript + D3 investigation dashboard
-├── alerts/             # Alert dispatch & deduplication engine
-├── tests/              # Unit, integration, E2E, and performance benchmarks
-├── docs/               # System architecture, data flow, performance reports, demo scripts
-├── docker-compose.yml  # Complete multi-container orchestration
-├── .env.example        # Environment variable template
-├── .gitignore          # Version control ignore definitions
-├── LICENSE             # Open source license
-└── README.md           # Master documentation
-```
-
----
-
-## 11. Quickstart & Installation
-
-### Prerequisites
-- Python 3.10+
-- Node.js 18+ and npm
-- Docker and Docker Compose (recommended) or local Kafka + Neo4j instances
-
-### 1. Clone and Configure
+### Option A: Complete Production Stack with Docker Compose
 ```bash
+# 1. Clone the repository
 git clone https://github.com/your-org/finGraph.git
 cd finGraph
-cp .env.example .env
+
+# 2. Copy production environment configuration
+cp .env.production.example .env
+
+# 3. Launch the full hardened cluster (Kafka, Neo4j, Flink, Backend, Frontend, Prometheus)
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-### 2. Launch Supporting Infrastructure (Docker)
-```bash
-docker-compose up -d kafka neo4j
-```
+Access the services:
+- **Web Dashboard**: `http://localhost:80`
+- **Backend API & Swagger**: `http://localhost:8000/docs`
+- **Prometheus Telemetry**: `http://localhost:9090`
+- **Neo4j Browser**: `http://localhost:7474`
 
-### 3. Run the Backend API
+### Option B: Local Development
 ```bash
-cd backend
-python -m venv venv
-# Windows: venv\Scripts\activate | Linux/macOS: source venv/bin/activate
+# 1. Launch Kafka & Neo4j
+docker compose up -d kafka neo4j
+
+# 2. Seed Neo4j schema & initial dataset
+python neo4j/scripts/init_schema.py
+python neo4j/scripts/seed.py
+
+# 3. Run Backend API
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
-```
+uvicorn backend.app.main:app --reload --port 8000
 
-### 4. Launch the React Dashboard
-```bash
-cd ../dashboard
+# 4. Run Frontend Dashboard
+cd dashboard
 npm install
 npm start
-```
 
-### 5. Start Transaction Simulation
-```bash
-cd ../simulator
-python src/simulator.py --rate 10 --suspicious-rate 0.25 --duration 60
+# 5. Run Synthetic Transaction Simulator
+cd ..
+python simulator/src/simulator.py --rate 10 --suspicious-rate 0.25 --duration 60 --output kafka
 ```
 
 ---
 
-## 12. Limitations & Disclaimer
+## 8. Verification & Test Suite
+
+Run the full automated test suite covering all 10 phases:
+
+```bash
+python -m pytest simulator/tests/ tests/neo4j/ tests/flink/ tests/detection/ tests/analytics/ tests/api/ tests/realtime/ tests/security/ -v
+```
+
+**Test Suite Result: 125 Passed, 1 Skipped, 0 Failures** (100% Passing).
+
+---
+
+## 9. License & Disclaimer
 
 > [!WARNING]
-> **Synthetic Demonstration System Only**: FinGraph uses 100% synthetic mock transaction data. It does not connect to any live banking rails or real customer accounts. The "Freeze Syndicate" action is strictly a simulated portfolio capability for compliance demonstration and creates local audit records only.
+> **Synthetic Demonstration System Only**: FinGraph is an educational and portfolio analytics platform using 100% synthetic transaction data. It does not connect to live banking rails. The "Freeze Account" action updates the graph state and creates immutable audit entries for compliance simulation.

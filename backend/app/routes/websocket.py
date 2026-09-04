@@ -1,13 +1,15 @@
 """
 FinGraph WebSocket & Real-Time Endpoints.
-Provides live event streaming to connected React dashboards and status inspection.
+Provides authenticated live event streaming to connected React dashboards and status inspection.
 """
 import asyncio
 import json
 import logging
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
+from typing import Optional
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, status
 
 from backend.app.config import get_api_config
+from backend.app.metrics.prometheus import get_metrics
 from backend.app.realtime.connection_manager import (
     WebSocketConnectionManager,
     get_connection_manager,
@@ -18,6 +20,8 @@ from backend.app.realtime.kafka_consumer import (
     RealtimeKafkaConsumer,
     get_realtime_kafka_consumer,
 )
+from backend.app.security.jwt import decode_access_token
+from backend.app.security.user_store import UserStore, get_user_store
 
 logger = logging.getLogger("FinGraph.WebSocketRouter")
 router = APIRouter(tags=["Realtime"])
@@ -48,18 +52,47 @@ def realtime_health_check(
 async def handle_websocket_session(
     websocket: WebSocket,
     manager: WebSocketConnectionManager,
+    token: Optional[str] = None,
 ):
-    """Processes bidirectional WebSocket session."""
+    """Processes bidirectional authenticated WebSocket session."""
+    # 1. Authenticate WebSocket Connection
+    query_token = token or websocket.query_params.get("token")
+    if not query_token and "authorization" in websocket.headers:
+        auth_hdr = websocket.headers["authorization"]
+        if auth_hdr.lower().startswith("bearer "):
+            query_token = auth_hdr[7:].strip()
+
+    user = None
+    if query_token:
+        claims = decode_access_token(query_token)
+        if claims and "sub" in claims:
+            user_store = get_user_store()
+            user = user_store.get_user_by_id(claims["sub"]) or user_store.get_user_by_username(claims.get("username", ""))
+
+    # If unauthenticated, close connection with 1008 (Policy Violation)
+    if not user or not user.is_active:
+        logger.warning("Rejected unauthenticated WebSocket connection attempt.")
+        await websocket.close(code=1008, reason="Authentication required. Provide valid JWT token.")
+        return
+
     client_host = websocket.client.host if websocket.client else "unknown"
-    accepted = await manager.connect(websocket, client_info={"host": client_host})
+    accepted = await manager.connect(
+        websocket,
+        client_info={"host": client_host, "user_id": user.user_id, "role": user.role.value},
+    )
     if not accepted:
         return
+
+    metrics = get_metrics()
+    metrics.set_active_ws_connections(manager.active_connections_count)
 
     # Send initial connection acknowledgment
     welcome_event = create_realtime_event(
         EventType.SYSTEM_PONG,
         {
             "connected": True,
+            "authenticated_as": user.username,
+            "role": user.role.value,
             "message": "Connected to FinGraph Real-Time Investigation Stream",
             "active_clients": manager.active_connections_count,
         },
@@ -79,16 +112,19 @@ async def handle_websocket_session(
 
                 elif action == "subscribe":
                     channels = msg.get("channels", [])
-                    manager.set_client_subscriptions(websocket, channels=channels)
+                    # Validate channel names
+                    valid_channels = {"alerts", "risk", "transactions", "graph", "all"}
+                    filtered_channels = [c for c in channels if c in valid_channels]
+                    manager.set_client_subscriptions(websocket, channels=filtered_channels)
                     ack = create_realtime_event(
                         EventType.SYSTEM_PONG,
-                        {"subscribed_channels": list(channels)},
+                        {"subscribed_channels": filtered_channels},
                     )
                     await websocket.send_text(json.dumps(ack.to_json_dict()))
 
                 elif action == "watch_account":
                     acc_id = msg.get("account_id")
-                    if acc_id:
+                    if acc_id and isinstance(acc_id, str) and len(acc_id) <= 64:
                         manager.set_client_subscriptions(websocket, watch_account=acc_id)
                         ack = create_realtime_event(
                             EventType.SYSTEM_PONG,
@@ -97,7 +133,6 @@ async def handle_websocket_session(
                         await websocket.send_text(json.dumps(ack.to_json_dict()))
 
                 else:
-                    # Echo unknown action safely
                     err = create_realtime_event(
                         EventType.ERROR,
                         {"code": "UNKNOWN_ACTION", "message": f"Action '{action}' is not supported."},
@@ -113,24 +148,28 @@ async def handle_websocket_session(
 
     except WebSocketDisconnect:
         await manager.disconnect(websocket)
+        metrics.set_active_ws_connections(manager.active_connections_count)
     except Exception as exc:
         logger.debug(f"WebSocket session closed with exception: {exc}")
         await manager.disconnect(websocket)
+        metrics.set_active_ws_connections(manager.active_connections_count)
 
 
 @router.websocket("/api/v1/ws")
 async def websocket_v1_endpoint(
     websocket: WebSocket,
+    token: Optional[str] = Query(None),
     manager: WebSocketConnectionManager = Depends(get_connection_manager),
 ):
-    """Primary versioned WebSocket connection route."""
-    await handle_websocket_session(websocket, manager)
+    """Primary authenticated versioned WebSocket connection route."""
+    await handle_websocket_session(websocket, manager, token=token)
 
 
 @router.websocket("/ws")
 async def websocket_legacy_endpoint(
     websocket: WebSocket,
+    token: Optional[str] = Query(None),
     manager: WebSocketConnectionManager = Depends(get_connection_manager),
 ):
-    """Unversioned WebSocket alias route."""
-    await handle_websocket_session(websocket, manager)
+    """Authenticated legacy WebSocket alias route."""
+    await handle_websocket_session(websocket, manager, token=token)

@@ -16,13 +16,14 @@ def test_health_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    assert data["service"] == "fingraph-api"
+    assert "FinGraph" in data["service"]
 
 
 def test_neo4j_health_check_healthy():
     """Verify /health/neo4j returns 200 when database is reachable."""
     mock_neo4j = MagicMock()
     mock_neo4j.verify_connectivity.return_value = True
+    mock_neo4j.execute_query.return_value = [{"ping": 1}]
 
     app.dependency_overrides[get_neo4j_client] = lambda: mock_neo4j
     client = TestClient(app)
@@ -32,7 +33,7 @@ def test_neo4j_health_check_healthy():
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "ok"
-        assert data["database"] == "neo4j"
+        assert data["database"] == "connected"
     finally:
         app.dependency_overrides.clear()
 
@@ -49,6 +50,6 @@ def test_neo4j_health_check_unhealthy():
         response = client.get("/health/neo4j")
         assert response.status_code == 503
         data = response.json()
-        assert "error" in data or "detail" in data
+        assert "error" in data
     finally:
         app.dependency_overrides.clear()

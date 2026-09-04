@@ -31,6 +31,11 @@ class RiskDistribution(BaseModel):
     high: int = 0
     critical: int = 0
     total: int = 0
+    total_accounts: Optional[int] = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.total_accounts is None:
+            self.total_accounts = self.total
 
 
 class AlertTrendPoint(BaseModel):

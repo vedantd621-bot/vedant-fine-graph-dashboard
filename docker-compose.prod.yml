@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: fingraph-prod-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT:[/kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERs: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      CLUSTER_ID: 'MkU3OEVNNTwwNTZkNDM2Qk'
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - kafka_prod_data:/var/lib/kafka/data
+    networks:
+      - fingraph-internal
+
+  neo4j:
+    image: neo4j:5.18.0
+    container_name: fingraph-prod-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/fingraph_secret_pass
+      - NEO5J_PLUGINS=["graph-data-science", "apoc"]
+      - NEO4J_dbms_security_procedures_unrestricted=gds.*,apoc.*
+      - NEO4J_dbms_security_procedures_allowlist=gds.*,apoc.*
+      - NEO5J_dbms_memory_heap_initial__size=1G
+      - NEO5J_dbms_memory_heap_max__size=4G
+      - NEO4J_dbms_memory_pagecache_size=1G:    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 6144M
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "fingraph_secret_pass", "RETURN 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - neo4j_prod_data:/data
+      - neo4j_prod_logs:/logs
+    networks:
+      - fingraph-internal
+
+  flink-jobmanager:
+    image: flink:1.18.1-scala_2.12-java11
+    container_name: fingraph-prod-flink-jobmanager
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+        parallelism.default: 4
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - fingraph-internal
+
+  flink-uÑ…Í­µ…¹…•Èè(€€€¥µ…”è™±¥¹¬èÄ¸Äà¸ÄµÍ…±…|È¸ÄÈµ©…Ù„ÄÄ(€€€½¹Ñ…¥¹•É}¹…µ”è™¥¹É…Á µÁÉ½µ™±¥¹¬µÑ…Í­µ…¹…•È(€€€É•ÍÑ…ÉĞèÕ¹±•ÍÌµÍÑ½ÁÁ•(€€€½µµ…¹èÑ…Í­µ…¹…•È(€€€Í…±”è€È(€€€•¹Ù¥É½¹µ•¹Ğè(€€€€€€´ğ(€€€€€€€1%9-}AI=AIQ%Mô(€€€€€€€©½‰µ…¹…•È¹ÉÁŒ¹…‘‘É•ÍÌè™±¥¹¬µ©½‰µ…¹…•È(€€€€€€€Ñ…Í­µ…¹…•È¹¹Õµ‰•É=™Q…Í­M±½ÑÌè€Ğ(€€€€€€€Á…É…±±•±¥Í´¹‘•™…Õ±Ğè€Ğ(€€€‘•Á•¹‘Í}½¸è(€€€€€€´™±¥¹¬µ©½‰µ…¹…•È(€€€¹•Ñİ½É­Ìè(€€€€€€´™¥¹É…Á µ¥¹Ñ•É¹…°((€‰…­•¹è(€€€‰Õ¥±è(€€€€€½¹Ñ•áĞè€¸(€€€€€‘½­•É™¥±”è½­•É™¥±”¹‰…­•¹(€€€½¹Ñ…¥¹•É}¹…µ”è™¥¹É…Á µÁÉ½µ‰…­•¹(€€€É•ÍÑ…ÉĞèÕ¹±•ÍÌµÍÑ½ÁÁ•(€€€•¹Ù¥É½¹µ•¹Ğè(€€€€€€´AA}9XõÁÉ½‘ÕÑ¥½¸(€€€€€€´A%}A=IPôàÀÀÀ(€€€€€€´9<Ñ)}UI$õ‰½±Ğè¼½¹•¼Ñ¨èÜØàÜ(€€€€€€´9<Ñ)}UMHõ¹•¼Ñ¨(€€€€€€´9<Ñ)}AMM]=Iõ™¥¹É…Á¡}Í•É•Ñ}Á…ÍÍh€€€€€€´--}	==QMQIA}MIYILõ­…™­„èÈäÀäÈ(€€€€€€´)]Q}MIQ}-dõ™¥¹É…Á¡}ÁÉ½‘}Í•É•Ñ}Í¥¹¥¹}­•å|ÌÉ‰åÑ•Í}µ¥¹¥µÕµ}±•¹Ñ¡|ÈÀÈØ(€€€€€€´IQ}1%5%Q}9	1õÑÉÕ”(€€€€€€´IQ}1%5%Q}IEUMQLôÄÈÀ(€€€€€€´IQ}1%5%Q}]%9=]}M=9LôØÀ(€€€‘•Á±½äè(€€€€€É•Í½ÕÉ•Ìè(€€€€€€€±¥µ¥ÑÌè(€€€€€€€€€ÁÕÌè€œÈ¸Àœ(€€€€€€€€€µ•µ½Éäè€ÈÀĞá4(€€€‘•Á•¹‘Í}½¸è(€€€€€¹•¼Ñ¨è(€€€€€€€½¹‘¥Ñ¥½¸èÍ•ÉÙ¥•}¡•…±Ñ¡ä(€€€€€­…™­„è(€€€€€€€½¹‘¥Ñ¥½¸èÍ•ÉÙ¥•}¡•…±Ñ¡ä(€€€¹•Ñİ½É­Ìè(€€€€€€´™¥¹É…Á µ¥¹Ñ•É¹…°((€™É½¹Ñ•¹è(€€€‰Õ¥±è(€€€€€½¹Ñ•áĞè€¸(€€€€€‘½­•É™¥±”è½­•É™¥±”¹™É½¹Ñ•¹(€€€½¹Ñ…¥¹•É}¹…µ”è™¥¹É…Á µÁÉ½µ™É½¹Ñ•¹(€€€É•ÍÑ…ÉĞèÕ¹±•ÍÌµÍÑ½ÁÁ•(€€€Á½ÉÑÌè(€€€€€€´€ˆàÀèàÀˆ(€€€‘•Á±½äè(€€€€€É•Í½ÕÉ•Ìè(€€€€€€€±¥µ¥ÑÌè(€€€€€€€€€ÁÕÌè€œÄ¸Àœ(€€€€€€€€€µ•µ½Éäè€ÔÄÉ4(€€€‘•Á•¹‘Í}½¸è(€€€€€€´‰…­•¹(€€€¹•Ñİ½É­Ìè(€€€€€€´™¥¹É…Á µ¥¹Ñ•É¹…°(€€€€€€´™¥¹É…Á µÁÕ‰±¥Œ((€ÁÉ½µ•Ñ¡•ÕÌè(€€€¥µ…”èÁÉ½´½ÁÉ½µ•Ñ¡•ÕÌéØÈ¸Ğà¸Ä(€€€½¹Ñ…¥¹•É}¹…µ”è™¥¹É…Á µÁÉ½µÁÉ½µ•Ñ¡•ÕÌ(€€€É•ÍÑ…ÉĞèÕ¹±•ÍÌµÍÑ½ÁÁ•(€€€Á½ÉÑÌè(€€€€€€´€ˆäÀäÀèäÀäÀˆ(€€€Ù½±Õµ•Ìè(€€€€€€´€¸½ÁÉ½µ•Ñ¡•ÕÌ¹åµ°è½•ÑŒ½ÁÉ½µ•Ñ¡•ÕÌ½ÁÉ½µ•Ñ¡•ÕÌ¹åµ°éÉ¼(€€€€€€´ÁÉ½µ•Ñ¡•ÕÍ}‘…Ñ„è½ÁÉ½µ•Ñ¡•ÕÌ(€€€‘•Á•¹‘Í}½¸è(€€€€€€´‰…­•¹(€€€¹•Ñİ½É­Ìè(€€€€€€´™¥¹É…Á µ¥¹Ñ•É¹…°()Ù½±Õµ•Ìè(€­…™­…}ÁÉ½‘}‘…Ñ„è(€¹•¼Ñ©}ÁÉ½‘}‘…Ñ„è(€¹•¼Ñ©}ÁÉ½‘}±½Ìè(€ÁÉ½µ•Ñ¡•ÕÍ}‘…Ñ„è()¹•Ñİ½É­Ìè(€™¥¹É…Á µ¥¹Ñ•É¹…°è(€€€‘É¥Ù•Èè‰É¥‘”(€™¥¹É…Á µÁÕ‰±¥Œè(€€€‘É¥Ù•Èè‰É¥‘”(

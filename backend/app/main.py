@@ -1,7 +1,7 @@
 """
 FinGraph FastAPI Main Application.
-Provides RESTful APIs and real-time WebSockets for live fraud syndicate detection,
-GDS analytics, account dossiers, interactive network visualization, and forensic case management.
+Provides hardened RESTful APIs and real-time WebSockets with JWT Authentication, RBAC,
+Rate Limiting, Security Headers, Prometheus Observability, and Graph Investigation tools.
 """
 import asyncio
 import logging
@@ -20,30 +20,39 @@ if str(root_dir) not in sys.path:
 
 from backend.app.config import get_api_config
 from backend.app.dependencies import get_neo4j_client
-from backend.app.models.common import ApiErrorDetail, ApiErrorResponse
+from backend.app.logging import setup_logging
+from backend.app.metrics.prometheus import get_metrics
+from backend.app.middleware.body_limit import BodySizeLimitMiddleware
+from backend.app.middleware.rate_limiter import RateLimiterMiddleware
+from backend.app.middleware.request_id import RequestIdMiddleware
+from backend.app.middleware.security_headers import SecurityHeadersMiddleware
 from backend.app.realtime.connection_manager import get_connection_manager
 from backend.app.realtime.kafka_consumer import get_realtime_kafka_consumer
-from backend.app.routes.health import router as health_router
-from backend.app.routes.alerts import router as alerts_router
-from backend.app.routes.accounts import router as accounts_router
-from backend.app.routes.graph import router as graph_router
-from backend.app.routes.dashboard import router as dashboard_router
-from backend.app.routes.investigation import router as investigation_router
-from backend.app.routes.websocket import router as websocket_router
+from backend.app.routes import (
+    accounts_router,
+    admin_router,
+    alerts_router,
+    auth_router,
+    dashboard_router,
+    graph_router,
+    health_router,
+    investigation_router,
+    metrics_router,
+    websocket_router,
+)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] [FinGraphAPI] %(message)s",
-    datefmt="%H:%M:%S",
+config = get_api_config()
+setup_logging(
+    level=config.app_env.upper() if config.debug else "INFO",
+    json_format=config.app_env.lower() == "production",
 )
 logger = logging.getLogger("FinGraph.API")
-config = get_api_config()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup and shutdown events."""
-    logger.info(f"Starting {config.app_name} v{config.app_version} ({config.app_env})...")
+    logger.info(f"Starting {config.app_name} v{config.app_version} [{config.app_env}]...")
     client = get_neo4j_client()
     try:
         if client.verify_connectivity():
@@ -76,34 +85,58 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=config.app_name,
     version=config.app_version,
-    description="Real-Time Fraud Syndicate Analytics & Graph Investigation REST/WebSocket API",
+    description="Production-Grade Real-Time Fraud Syndicate Analytics & Graph Investigation Platform",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
     lifespan=lifespan,
 )
 
-# Configure CORS for React UI
+# 1. Attach Request ID Middleware
+app.add_middleware(RequestIdMiddleware)
+
+# 2. Attach Security Hardening Headers Middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 3. Attach Rate Limiter Middleware
+app.add_middleware(RateLimiterMiddleware)
+
+# 4. Attach Request Body Size Limiter
+app.add_middleware(BodySizeLimitMiddleware)
+
+# 5. Configure Strict CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.frontend_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID", "X-Process-Time-Ms", "Retry-After"],
 )
 
 
 @app.middleware("http")
-async def add_process_time_and_log(request: Request, call_next):
-    """Logs incoming requests with response latency without logging sensitive payloads."""
+async def record_metrics_and_log(request: Request, call_next):
+    """Measures latency, updates Prometheus telemetry, and logs request correlation."""
     start_time = time.time()
     response = await call_next(request)
-    duration_ms = (time.time() - start_time) * 1000.0
+    duration_sec = time.time() - start_time
+    duration_ms = duration_sec * 1000.0
 
-    # Add header
+    # Record in Prometheus
+    metrics = get_metrics()
+    metrics.record_http_request(
+        method=request.method,
+        path=request.url.path,
+        status_code=response.status_code,
+        duration_seconds=duration_sec,
+    )
+
     response.headers["X-Process-Time-Ms"] = f"{duration_ms:.2f}"
+    req_id = getattr(request.state, "request_id", "-")
+
     logger.info(
-        f"{request.method} {request.url.path} -> {response.status_code} ({duration_ms:.1f}ms)"
+        f"[{req_id}] {request.method} {request.url.path} -> {response.status_code} ({duration_ms:.1f}ms)"
     )
     return response
 
@@ -111,27 +144,39 @@ async def add_process_time_and_log(request: Request, call_next):
 # Global Exception Handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    """Handles standard HTTPExceptions with consistent ApiErrorResponse envelope."""
+    """Handles HTTPExceptions with consistent error envelope and request correlation ID."""
+    req_id = getattr(request.state, "request_id", "unknown")
     msg = exc.detail if isinstance(exc.detail, str) else exc.detail.get("message", "Request error")
     code = exc.detail.get("code", "HTTP_ERROR") if isinstance(exc.detail, dict) else "HTTP_ERROR"
     return JSONResponse(
         status_code=exc.status_code,
-        content={"error": {"code": code, "message": msg}},
+        headers=exc.headers,
+        content={"error": {"code": code, "message": msg, "request_id": req_id}},
     )
 
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
-    """Catches unhandled server exceptions safely without leaking internal stacktraces."""
-    logger.error(f"Unhandled error processing {request.url.path}: {exc}", exc_info=True)
+    """Centralized unhandled exception handler without leaking stack traces."""
+    req_id = getattr(request.state, "request_id", "unknown")
+    logger.error(f"[{req_id}] Unhandled server exception on {request.url.path}: {exc}", exc_info=True)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": {"code": "INTERNAL_SERVER_ERROR", "message": "An unexpected error occurred."}},
+        content={
+            "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "An unexpected server error occurred. Please contact support with request_id.",
+                "request_id": req_id,
+            }
+        },
     )
 
 
-# Mount Routers
+# Mount Hardened Routers
 app.include_router(health_router)
+app.include_router(metrics_router)
+app.include_router(auth_router)
+app.include_router(admin_router)
 app.include_router(alerts_router)
 app.include_router(accounts_router)
 app.include_router(graph_router)

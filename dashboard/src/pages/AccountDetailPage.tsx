@@ -15,6 +15,7 @@ import { AccountDetail, AccountTransactionItem, GraphPayload } from '../types';
 import { InteractiveGraph } from '../components/graph/InteractiveGraph';
 import { realtimeClient } from '../realtime/websocket';
 import { GraphUpdatedData, RiskUpdatedData, TransactionCreatedData } from '../types/realtime';
+import { useAuth } from '../auth/AuthContext';
 
 interface AccountDetailPageProps {
   accountId: string;
@@ -27,6 +28,8 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
   onBack,
   onSelectAccount,
 }) => {
+  const { hasRole } = useAuth();
+  const canFreeze = hasRole(['INVESTIGATOR', 'ADMIN']);
   const [account, setAccount] = useState<AccountDetail | null>(null);
   const [transactions, setTransactions] = useState<AccountTransactionItem[]>([]);
   const [graphData, setGraphData] = useState<GraphPayload | null>(null);
@@ -160,16 +163,20 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
         </button>
 
         <button
-          disabled={freezing}
+          disabled={freezing || !canFreeze}
           onClick={handleToggleFreeze}
+          title={!canFreeze ? 'Account containment requires Investigator or Admin role' : undefined}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-            account.is_frozen
+            !canFreeze
+              ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'
+              : account.is_frozen
               ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
               : 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 border border-rose-500/30'
           }`}
         >
           <Snowflake className="h-4 w-4" />
           {account.is_frozen ? 'Unfreeze Account' : 'Simulate Account Freeze'}
+          {!canFreeze && <span className="text-[10px] font-normal text-slate-500">(Read-Only)</span>}
         </button>
       </div>
 

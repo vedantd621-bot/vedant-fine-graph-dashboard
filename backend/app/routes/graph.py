@@ -1,36 +1,32 @@
 """
-FinGraph Interactive Graph Visualization Endpoints.
+FinGraph Interactive Graph API Endpoints.
+Serves bounded local subgraphs with strict depth and size limits.
+Protected by Authentication and RBAC.
 """
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from backend.app.dependencies import get_neo4j_client, get_risk_engine
-from backend.app.models.common import ApiResponse
+from backend.app.dependencies import get_graph_service
 from backend.app.models.graph import GraphPayload
+from backend.app.security.dependencies import require_analyst
+from backend.app.security.models import User
 from backend.app.services.graph_service import GraphService
 
-router = APIRouter(prefix="/api/v1/accounts", tags=["Graph"])
+router = APIRouter(prefix="/api/v1/accounts", tags=["Graph Visualizer"])
 
 
-def get_graph_service(
-    client=Depends(get_neo4j_client),
-    risk_eng=Depends(get_risk_engine),
-) -> GraphService:
-    return GraphService(client=client, risk_engine=risk_eng)
-
-
-@router.get("/{account_id}/graph", response_model=ApiResponse[GraphPayload])
+@router.get("/{account_id}/graph", response_model=GraphPayload)
 def get_account_subgraph(
     account_id: str,
     depth: int = Query(2, ge=1, le=3, description="Graph traversal hop depth (1 to 3)"),
-    max_nodes: int = Query(100, ge=10, le=200),
-    max_edges: int = Query(250, ge=20, le=500),
+    max_nodes: int = Query(100, ge=10, le=100, description="Upper bound on total nodes to render"),
+    max_edges: int = Query(250, ge=10, le=250, description="Upper bound on total relationships to render"),
+    current_user: User = Depends(require_analyst),
     service: GraphService = Depends(get_graph_service),
 ):
-    """Retrieves bounded neighborhood subgraph centered on focal account for D3/React visualization."""
-    payload = service.get_account_subgraph(
+    """Retrieves bounded neighborhood graph for interactive D3 network visualization."""
+    return service.get_account_subgraph(
         account_id=account_id,
         depth=depth,
         max_nodes=max_nodes,
         max_edges=max_edges,
     )
-    return ApiResponse(data=payload)

@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from analytics.src.models import GraphFeatures, RiskLevel, RiskScore, RuleSignals
+from backend.app.models.common import PaginationMeta
 
 
 class AccountSummary(BaseModel):
@@ -27,6 +28,12 @@ class AccountSummary(BaseModel):
     total_volume: float = 0.0
     is_frozen: bool = False
     updated_at: Optional[datetime] = None
+
+
+class AccountListResponse(BaseModel):
+    """Paginated list of account summaries."""
+    data: List[AccountSummary]
+    pagination: PaginationMeta
 
 
 class AccountDetail(BaseModel):
@@ -60,6 +67,12 @@ class AccountTransactionItem(BaseModel):
     transaction_type: str = "transfer"
     scenario_id: Optional[str] = None
     channel: Optional[str] = None
+
+
+class AccountTransactionListResponse(BaseModel):
+    """Paginated list of account transactions."""
+    data: List[AccountTransactionItem]
+    pagination: PaginationMeta
 
 
 class AccountFreezeRequest(BaseModel):

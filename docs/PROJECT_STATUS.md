@@ -1,4 +1,4 @@
-# FinGraph Development Status & Milestones
+﻿# FinGraph Development Status & Milestones
 
 | Phase | Description | Status | Test Coverage | Verification |
 |---|---|---|---|---|
@@ -11,15 +11,12 @@
 | **Phase 7** | **Neo4j Graph Data Science (GDS)** | 🟢 **Completed** | 93 Tests Passed | Validated |
 | **Phase 8** | **Investigation API + React Dashboard** | 🟢 **Completed** | 103 Tests Passed | Validated |
 | **Phase 9** | **Real-Time Alerting + Live Stream Updates** | 🟢 **Completed** | 116 Tests Passed | Validated |
-| **Phase 10** | **Investigation Case Management & Notes** | ⚪ Planned | Pending | Pending |
-| **Phase 11** | **Advanced Multi-Cluster Visualizer** | ⚪ Planned | Pending | Pending |
-| **Phase 12** | **Performance & E2E Verification** | ⚪ Planned | Pending | Pending |
-| **Phase 13** | **Documentation & Final Polish** | ⚪ Planned | Pending | Pending |
+| **Phase 10** | **Production Hardening, Security, Observability & Deployment** | 🟢 **Completed** | 125 Tests Passed | Validated |
 
 ---
 
-## Active Completed Milestones:
-- **Phase 1**: Scaffold, `docker-compose.yml`, environment configurations, documentation suite.
+## Completed Milestones Overview:
+- **Phase 1**: Architecture scaffold, `docker-compose.yml`, environment configurations, documentation suite.
 - **Phase 2**:
   - `simulator/src/models.py`: Pydantic V2 schema models for `TransactionEvent`, `Account`, `Person`, `Bank`, and Enums.
   - `simulator/src/generator.py`: Graph-aware deterministic synthetic generator for normal retail/commercial traffic and 5 distinct fraud syndicate topologies.
@@ -45,7 +42,7 @@
 - **Phase 7**:
   - `analytics/src/models.py`: `GraphFeatures`, `RuleSignals`, `RiskScore`, `RiskAssessment`, `RiskLevel`.
   - `analytics/src/gds_manager.py`: In-memory graph projection (`fingraph`) and GDS algorithms (PageRank, WCC, Louvain) with graceful topological fallbacks.
-  - `analytics/src/risk_engine.py`: Explainable composite risk engine ($60\%$ rule $+ 40\%$ graph) with audit justifications and batch persistence.
+  - `analytics/src/risk_engine.py`: Explainable composite risk engine (60% rule + 40% graph) with audit justifications and batch persistence.
   - `analytics/src/cli.py`: Analytics CLI supporting `--all`, `--account`, `--run-gds`, `--calculate-risk`, `--persist`, and JSON output.
   - `neo4j/cypher/gds/`: Reusable GDS Cypher scripts.
 - **Phase 8**:
@@ -60,4 +57,12 @@
   - `backend/app/realtime/kafka_consumer.py`: Background Kafka consumer for topic `transactions` dispatching live graph updates.
   - `backend/app/routes/websocket.py`: `WS /api/v1/ws`, `WS /ws`, and `GET /health/realtime`.
   - `frontend/src/realtime/` & `dashboard/src/realtime/`: WebSocket client with exponential backoff reconnect, `RealtimeProvider`, `AlertToast`, `NotificationCenter`, and reactive UI state bindings across all pages.
-  - `tests/realtime/`: 13 dedicated unit/integration tests (**116/116 tests passing repository-wide**).
+- **Phase 10**:
+  - `backend/app/security/`: RFC 7519 JWT Auth (HS256, 60m expiry), PBKDF2 password hashing (150,000 iterations, 32-byte salt), User store (`admin`, `investigator`, `analyst`), RBAC guards, and Audit trail logger (`AuditService`).
+  - `backend/app/middleware/`: Correlation Request ID (`X-Request-ID`), Security headers (`CSP`, `X-Frame-Options`, `X-Content-Type-Options`), Sliding-window IP rate limiter (120 req/min general, 20 req/min login), and 2MB request body size limiter.
+  - `backend/app/metrics/` & `routes/metrics.py`: Prometheus exporter on `GET /metrics` tracking HTTP latency, WebSocket connections, Neo4j queries, Kafka events, and alerts created.
+  - `backend/app/routes/health.py`: Full Kubernetes health probes (`/health`, `/live`, `/ready`, `/health/neo4j`, `/health/kafka`, `/health/realtime`).
+  - `dashboard/src/auth/` & `components/layout/Navbar.tsx`: React Auth context, Login page with 1-click persona quick-fills, ErrorBoundary, Bearer token interceptor, and role-gated UI actions (freeze account / alert transition restricted for `ANALYST`).
+  - Containers & Orchestration: Multi-stage non-root `Dockerfile.backend`, `Dockerfile.frontend`, `nginx/nginx.conf`, `nginx/default.conf`, `docker-compose.prod.yml`, `prometheus.yml`, `.env.production.example`, `deploy.sh`, `deploy.ps1`.
+  - Operational Runbooks: `docs/security/security.md`, `docs/operations/runbook.md`, `docs/operations/disaster-recovery.md`, `docs/operations/production-readiness.md`, `docs/deployment/production.md`.
+  - **125 passed, 1 skipped (0 failures)** repository-wide.

@@ -1,0 +1,43 @@
+﻿# =======================================================================
+# FinGraph Backend API - Hardened Production Container
+# Multi-stage build, non-root security user, Gunicorn/Uvicorn worker pool
+# =======================================================================
+
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir --user gunicorn==21.2.0
+
+FROM python:3.11-slim AS runner
+
+RUN groupadd -g 10001 appgroup && \
+    useradd -u 10001 -g appgroup -s /bin/bash -m appuser
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /root/.local /home/appuser/.local
+ENV PATH=/home/appuser/.local/bin:$PATH
+ENV PYTHONPATH=/app
+
+COPY --chown=appuser:appgroup . /app
+
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:8000/live || exit 1
+
+CMD ["gunicorn", "backend.app.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "60", "--keep-alive", "5", "--access-logfile", "-", "--error-logfile", "-"]

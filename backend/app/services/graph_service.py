@@ -56,8 +56,13 @@ class GraphService:
         edges: List[GraphEdge] = []
 
         for r in transfer_records:
-            account_ids.add(r["source"])
-            account_ids.add(r["target"])
+            src_node = r.get("source") or r.get("src_id")
+            dst_node = r.get("target") or r.get("dst_id")
+            if not src_node or not dst_node:
+                continue
+
+            account_ids.add(src_node)
+            account_ids.add(dst_node)
 
             ts = r.get("timestamp")
             if isinstance(ts, str):
@@ -67,14 +72,14 @@ class GraphService:
 
             edges.append(
                 GraphEdge(
-                    id=f"tx_{r['tx_id']}",
-                    source=r["source"],
-                    target=r["target"],
+                    id=f"tx_{r.get('tx_id', r.get('transaction_id', 'unknown'))}",
+                    source=src_node,
+                    target=dst_node,
                     type="TRANSFERRED_TO",
                     amount=float(r["amount"]),
-                    currency=r["currency"],
+                    currency=r.get("currency", "USD"),
                     timestamp=ts,
-                    metadata={"transaction_id": r["tx_id"]},
+                    metadata={"transaction_id": r.get("tx_id", r.get("transaction_id"))},
                 )
             )
 
@@ -171,6 +176,7 @@ class GraphService:
         is_truncated = len(transfer_records) >= max_edges or len(nodes) >= max_nodes
 
         return GraphPayload(
+            focal_account_id=account_id,
             nodes=nodes,
             edges=edges,
             is_truncated=is_truncated,

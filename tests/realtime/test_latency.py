@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 
 from backend.app.dependencies import get_neo4j_client
 from backend.app.main import app
+from backend.app.security.jwt import create_access_token
 from backend.app.realtime.connection_manager import get_connection_manager
 from backend.app.realtime.event_bus import get_event_bus
 from backend.app.realtime.events import (
@@ -36,7 +37,8 @@ def test_realtime_websocket_latency_benchmark():
     latencies_ms: List[float] = []
 
     try:
-        with client.websocket_connect("/api/v1/ws") as ws:
+        token = create_access_token({"sub": "usr_analyst", "username": "analyst", "role": "ANALYST"})
+        with client.websocket_connect(f"/api/v1/ws?token={token}") as ws:
             # Consume welcome message
             _ = ws.receive_text()
 

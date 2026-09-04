@@ -1,18 +1,51 @@
-# FinGraph Security & Compliance Policy
+# FinGraph Security Architecture & Hardening Guide
 
-## 1. Synthetic Data Guarantee
-FinGraph strictly processes 100% synthetically generated financial transaction events. No real PII (Personally Identifiable Information), banking account numbers, real customer identities, or live financial infrastructure connections are permitted or utilized anywhere within this repository.
+## 1. Authentication & Session Management
+- **RFC 7519 JSON Web Tokens (JWT)**: Cryptographically signed tokens with configurable expiration (default: 60 minutes).
+- **Signature Algorithm**: HMAC-SHA256 (HS256) with minimum 32-byte secret enforcement.
+- **Key Rotation**: Secrets configurable via JWT_SECRET_KEY environment variable without downtime.
+- **Payload Claims**:
+  - sub: Unique internal user ID (e.g. usr_admin_01)
+  - username: Human operator identity
+  - role: RBAC Role enum (ANALYST, INVESTIGATOR, ADMIN)
+  - iat: Issued-at UTC timestamp
+  - exp: Expiration UTC timestamp
 
-## 2. Secrets Management
-- **No Hardcoded Credentials**: API secrets, database passwords, and SMTP credentials must strictly be injected via environment variables (`.env`).
-- **Git Ignore**: `.env`, `*.pem`, `*.key`, and secret data are listed in `.gitignore`.
-- **Default Development Passwords**: Documented credentials in `.env.example` and `docker-compose.yml` are clearly marked default placeholders for sandbox isolation only.
+## 2. Password Hashing & Secret Storage
+- **Cryptographic Standard**: PBKDF2-HMAC-SHA256 conforming to NIST SP 800-132.
+- **Key Derivation Work Factor**: 150,000 iterations.
+- **Salt Generation**: Cryptographically secure 32-byte pseudo-random salt generated via secrets.token_bytes(32).
+- **Constant-Time Verification**: hmac.compare_digest prevents timing side-channel attacks.
 
-## 3. Cypher Injection Prevention
-- All Cypher queries executed in backend services, Flink sinks, or migration scripts must strictly utilize parameterized inputs (e.g., `$account_id`, `$amount`).
-- Dynamic string concatenation of user-supplied parameters into raw Cypher strings is strictly forbidden.
+## 3. Role-Based Access Control (RBAC)
+FinGraph enforces strict role segregation across all REST and WebSocket resources:
 
-## 4. Simulated Freeze Action Safeguards
-- The "Freeze Syndicate" UI action is an educational and portfolio demonstration feature.
-- It performs an internal state update (`SET a.is_frozen = true`) in the local Neo4j database and logs a tamper-evident entry to the internal audit log.
-- It has no external API integration with payment rails (Fedwire, ACH, SWIFT, SEPA).
+| Endpoint | Required Role | Description |
+|---|---|---|
+| POST /api/v1/auth/login | Public | Authenticates credentials & issues JWT |
+| GET /api/v1/auth/me | ANALYST | Inspects active session details |
+| GET /api/v1/dashboard/* | ANALYST | High-level KPI aggregations & risk distributions |
+| GET /api/v1/alerts | ANALYST | Alert feed list & filters |
+| GET /api/v1/alerts/{id} | ANALYST | Full alert dossier inspection |
+| PATCH /api/v1/alerts/{id} | INVESTIGATOR | Alert state machine mutations |
+| GET /api/v1/accounts | ANALYST | Account catalog & risk features |
+| GET /api/v1/accounts/{id} | ANALYST | Detailed account graph dossier |
+| POST /api/v1/accounts/{id}/freeze | INVESTIGATOR | Containment freeze action |
+| GET /api/v1/investigation/* | ANALYST | Money trail & entity search |
+| GET /api/v1/admin/* | ADMIN | User provisioning & audit trail logs |
+| WS /api/v1/ws | ANALYST | Authenticated real-time streaming channel |
+
+## 4. Alert State Machine Validation
+Status transitions are strictly validated in the service layer:
+- OPEN -> INVESTIGATING, RESOLVED, DISMISSED
+- INVESTIGATING -> RESOLVED, DISMISSED
+- RESOLVED & DISMISSED are terminal states.
+
+## 5. Security Headers & Network Protections
+The API injects defense-in-depth security response headers:
+- X-Content-Type-Options: nosniff
+- X-Frame-Options: DENY
+- Referrer-Policy: strict-origin-when-cross-origin
+- Content-Security-Policy: default-src 'self'
+- Permissions-Policy: camera=(), microphone=(), geolocation=()
+- X-Request-ID: Correlation ID (req_xxxxxxxxxxxx)

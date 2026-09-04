@@ -12,6 +12,7 @@ from backend.app.dependencies import (
     get_risk_engine,
 )
 from backend.app.main import app
+from backend.app.security.jwt import create_access_token
 
 
 def test_list_alerts_endpoint():
@@ -69,7 +70,8 @@ def test_list_alerts_endpoint():
     client = TestClient(app)
 
     try:
-        response = client.get("/api/v1/alerts?page=1&page_size=10")
+        token = create_access_token({"sub": "usr_analyst", "username": "analyst", "role": "ANALYST"})
+        response = client.get("/api/v1/alerts?page=1&page_size=10", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -119,10 +121,13 @@ def test_get_alert_detail_and_update_status():
     client = TestClient(app)
 
     try:
+        token = create_access_token({"sub": "usr_inv", "username": "investigator", "role": "INVESTIGATOR"})
+        headers = {"Authorization": f"Bearer {token}"}
+
         # 1. Get Detail
-        res = client.get("/api/v1/alerts/ALT_CYC_001")
+        res = client.get("/api/v1/alerts/ALT_CYC_001", headers=headers)
         assert res.status_code == 200
-        detail = res.json()["data"]
+        detail = res.json()
         assert detail["alert_id"] == "ALT_CYC_001"
         assert detail["status"] == "OPEN"
 
@@ -130,9 +135,10 @@ def test_get_alert_detail_and_update_status():
         patch_res = client.patch(
             "/api/v1/alerts/ALT_CYC_001",
             json={"status": "INVESTIGATING", "notes": "Investigating node relationships"},
+            headers=headers,
         )
         assert patch_res.status_code == 200
-        updated = patch_res.json()["data"]
+        updated = patch_res.json()
         assert updated["status"] == "INVESTIGATING"
     finally:
         app.dependency_overrides.clear()
