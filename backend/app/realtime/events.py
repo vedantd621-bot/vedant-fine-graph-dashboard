@@ -1,4 +1,4 @@
-﻿"""
+"""
 FinGraph Real-Time Event Envelope & Strongly Typed Payloads.
 Ensures uniform JSON serialization for WebSocket broadcast events across alerts, risk, transactions, and cases.
 """
@@ -23,6 +23,11 @@ class EventType(str, Enum):
     CASE_UPDATED = "case.updated"
     INVESTIGATION_UPDATED = "investigation.updated"
     ACCOUNT_FROZEN = "account.frozen"
+    NETWORK_CREATED = "network.created"
+    NETWORK_UPDATED = "network.updated"
+    NETWORK_RISK_UPDATED = "network.risk_updated"
+    ANOMALY_DETECTED = "anomaly.detected"
+    ENTITY_BEHAVIOR_CHANGED = "entity.behavior_changed"
     SYSTEM_PING = "system.ping"
     SYSTEM_PONG = "system.pong"
     ERROR = "error"
@@ -143,6 +148,60 @@ class AccountFrozenPayload(BaseModel):
     actor: str
     reason: Optional[str] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class NetworkCreatedPayload(BaseModel):
+    """Payload emitted when a new fraud network is discovered."""
+    network_id: str
+    name: str
+    network_type: str
+    risk_score: float
+    risk_level: str
+    member_count: int
+    total_volume: float
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class NetworkUpdatedPayload(BaseModel):
+    """Payload emitted when a fraud network is mutated or linked to a case."""
+    network_id: str
+    action: str  # "MEMBER_ADDED", "CASE_LINKED", "ALERT_LINKED", "STATUS_UPDATED"
+    risk_score: float
+    member_count: int
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class NetworkRiskUpdatedPayload(BaseModel):
+    """Payload emitted when a fraud network's composite risk score is recalculated."""
+    network_id: str
+    risk_score: float
+    risk_level: str
+    contributing_factors_count: int
+    calculated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class AnomalyDetectedPayload(BaseModel):
+    """Payload emitted when a behavioral anomaly deviation is flagged."""
+    anomaly_id: str
+    entity_id: str
+    anomaly_type: str
+    severity: str
+    anomaly_score: float
+    window: str
+    metric_name: str
+    observed_value: float
+    baseline_value: float
+    deviation_ratio: float
+    detected_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class EntityBehaviorChangedPayload(BaseModel):
+    """Payload emitted when an entity's baseline or active profile updates."""
+    entity_id: str
+    anomaly_score: float
+    is_anomalous: bool
+    active_anomalies_count: int
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ErrorPayload(BaseModel):

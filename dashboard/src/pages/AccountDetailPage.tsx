@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Snowflake,
@@ -12,14 +12,20 @@ import {
   Sparkles,
   Layers,
   Clock,
+  TrendingUp,
+  Zap,
+  Compass,
 } from 'lucide-react';
 import { apiClient } from '../api/client';
 import {
   AccountDetail,
   AccountTransactionItem,
+  EntityBehaviorResponse,
   EntityRiskProfile,
+  EntitySimilarityResponse,
   GraphPayload,
   InvestigationTimelineEvent,
+  TemporalWindow,
 } from '../types';
 import { InteractiveGraph } from '../components/graph/InteractiveGraph';
 import { TimelineView } from '../components/investigation/TimelineView';
@@ -45,6 +51,9 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
   const [riskProfile, setRiskProfile] = useState<EntityRiskProfile | null>(null);
   const [timelineEvents, setTimelineEvents] = useState<InvestigationTimelineEvent[]>([]);
   const [transactions, setTransactions] = useState<AccountTransactionItem[]>([]);
+  const [behavior, setBehavior] = useState<EntityBehaviorResponse | null>(null);
+  const [similarEntities, setSimilarEntities] = useState<EntitySimilarityResponse | null>(null);
+  const [activeWindow, setActiveWindow] = useState<TemporalWindow>('24h');
   const [graphData, setGraphData] = useState<GraphPayload | null>(null);
   const [graphDepth, setGraphDepth] = useState<number>(2);
   const [suspiciousOnly, setSuspiciousOnly] = useState<boolean>(false);
@@ -55,7 +64,7 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
   const fetchAccountData = async () => {
     try {
       setLoading(true);
-      const [accRes, txRes, gRes, profRes, tlRes] = await Promise.all([
+      const [accRes, txRes, gRes, profRes, tlRes, behRes, simRes] = await Promise.all([
         apiClient.getAccountDetail(accountId),
         apiClient.getAccountTransactions(accountId, { page: 1, page_size: 20 }),
         suspiciousOnly
@@ -63,12 +72,16 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
           : apiClient.getAccountGraph(accountId, graphDepth),
         apiClient.getEntityRiskProfile(accountId).catch(() => null),
         apiClient.getEntityTimeline(accountId).catch(() => ({ events: [] })),
+        apiClient.getEntityBehavior(accountId, activeWindow).catch(() => null),
+        apiClient.getSimilarEntities(accountId, 4).catch(() => null),
       ]);
       setAccount(accRes);
       setTransactions(txRes.data);
       setGraphData(gRes);
       if (profRes) setRiskProfile(profRes);
       if (tlRes && tlRes.events) setTimelineEvents(tlRes.events);
+      if (behRes) setBehavior(behRes);
+      if (simRes) setSimilarEntities(simRes);
     } catch (err: any) {
       setError(err.message || 'Failed to load account dossier.');
     } finally {
@@ -79,7 +92,7 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
   useEffect(() => {
     fetchAccountData();
     realtimeClient.watchAccount(accountId);
-  }, [accountId, graphDepth, suspiciousOnly]);
+  }, [accountId, graphDepth, suspiciousOnly, activeWindow]);
 
   useEffect(() => {
     const unsubRisk = realtimeClient.on('risk.updated', (evt) => {
@@ -148,9 +161,9 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
         !account.is_frozen,
         'Simulated containment freeze from investigation dashboard'
       );
-      setAccount({ ...account, is_frozen: res.is_frozen });
+      setAccount((prev) => (prev ? { ...prev, is_frozen: res.is_frozen } : prev));
     } catch (err: any) {
-      alert(`Freeze action failed: ${err.message}`);
+      alert(err.response?.data?.detail?.message || 'Failed to toggle account freeze status.');
     } finally {
       setFreezing(false);
     }
@@ -158,152 +171,247 @@ export const AccountDetailPage: React.FC<AccountDetailPageProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-400">
-        <span>Loading account dossier...</span>
+      <div className="p-12 text-center">
+        <div className="h-8 w-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin mx-auto mb-3"></div>
+        <span className="text-xs uppercase font-semibold text-slate-400 tracking-wider">
+          Loading Account Dossier...
+        </span>
       </div>
     );
   }
 
   if (error || !account) {
     return (
-      <div className="p-6 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300">
-        <p>{error || 'Account not found.'}</p>
-        <button onClick={onBack} className="mt-3 text-xs underline">
-          Back to Accounts
+      <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-4">
+        <div className="text-rose-400 font-semibold">{error || 'Account not found.'}</div>
+        <button
+          onClick={onBack}
+          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold"
+        >
+          Return to Accounts
         </button>
       </div>
     );
   }
 
-  const isCrit = account.risk_level === 'CRITICAL';
-  const isHigh = account.risk_level === 'HIGH';
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to Accounts
-        </button>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+        <div className="space-y-1">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 text-xs text-slate-400 hover:text-cyan-400 transition-colors mb-2"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Back to Accounts List</span>
+          </button>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-slate-100 font-mono">{account.account_id}</h1>
+            {account.is_frozen && (
+              <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold flex items-center gap-1.5">
+                <Snowflake className="h-3.5 w-3.5" /> Frozen
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-400">
+            Account Type: <strong className="text-slate-200">{account.type}</strong> | Balance:{' '}
+            <strong className="text-slate-200">${account.balance.toLocaleString()} {account.currency}</strong>
+          </p>
+        </div>
 
-        <button
-          disabled={freezing || !canFreeze}
-          onClick={handleToggleFreeze}
-          title={!canFreeze ? 'Account containment requires Investigator or Admin role' : undefined}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-            !canFreeze
-              ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'
-              : account.is_frozen
-              ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30'
-              : 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 border border-rose-500/30'
-          }`}
-        >
-          <Snowflake className="h-4 w-4" />
-          {account.is_frozen ? 'Unfreeze Account' : 'Simulate Account Freeze'}
-          {!canFreeze && <span className="text-[10px] font-normal text-slate-500">(Read-Only)</span>}
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl">
+            <span className="text-xs text-slate-400">Risk Score:</span>
+            <span
+              className={`text-base font-bold font-mono ${
+                account.risk_level === 'CRITICAL'
+                  ? 'text-rose-400'
+                  : account.risk_level === 'HIGH'
+                  ? 'text-amber-400'
+                  : 'text-emerald-400'
+              }`}
+            >
+              {account.risk_score.toFixed(1)} / 100 ({account.risk_level})
+            </span>
+          </div>
+
+          {canFreeze && (
+            <button
+              onClick={handleToggleFreeze}
+              disabled={freezing}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-md ${
+                account.is_frozen
+                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                  : 'bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-extrabold shadow-cyan-950/40'
+              }`}
+            >
+              <Snowflake className="h-4 w-4" />
+              <span>{freezing ? 'Updating...' : account.is_frozen ? 'Unfreeze Account' : 'Freeze Account'}</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Account Banner Dossier */}
-      <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 shadow-sm space-y-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold font-mono text-slate-100">{account.account_id}</h2>
-              <span
-                className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded border ${
-                  isCrit
-                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                    : isHigh
-                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                    : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
+      {/* Primary KPI Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+          <span className="text-xs text-slate-400">Owner Entity</span>
+          <div className="text-sm font-semibold text-slate-200 flex items-center gap-1.5 mt-1">
+            <Users className="h-4 w-4 text-cyan-400" />
+            {account.owner_id ? `${account.owner_id} (${account.owner_type})` : 'Unassigned'}
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+          <span className="text-xs text-slate-400">Bank / Institution</span>
+          <div className="text-sm font-semibold text-slate-200 flex items-center gap-1.5 mt-1">
+            <Building className="h-4 w-4 text-cyan-400" />
+            {account.bank_name || 'FinGraph Core'} ({account.bank_routing})
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+          <span className="text-xs text-slate-400">PageRank Centrality</span>
+          <div className="text-sm font-mono font-bold text-slate-100 mt-1">
+            {account.features.pagerank.toFixed(5)}
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+          <span className="text-xs text-slate-400">Community & Degree</span>
+          <div className="text-sm font-semibold text-slate-200 mt-1">
+            Cluster #{account.features.louvain_community_id ?? 'None'} • {account.features.total_degree} Links
+          </div>
+        </div>
+      </div>
+
+      {/* Behavioral Anomaly & Temporal Dossier */}
+      <div className="p-5 rounded-xl bg-slate-900/90 border border-slate-800 shadow-md space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-amber-400" />
+            <h3 className="text-sm font-bold text-slate-100">Behavioral Baseline & Temporal Deviations</h3>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-xs">
+            <span className="text-slate-400 mr-1">Window:</span>
+            {(['5m', '1h', '24h', '7d', '30d'] as TemporalWindow[]).map((w) => (
+              <button
+                key={w}
+                onClick={() => setActiveWindow(w)}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
+                  activeWindow === w
+                    ? 'bg-cyan-500 text-slate-950 font-bold'
+                    : 'bg-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                {account.risk_score.toFixed(1)}/100 · {account.risk_level} RISK
-              </span>
-              {account.is_frozen && (
-                <span className="text-xs font-bold uppercase px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center gap-1">
-                  <Snowflake className="h-3 w-3" /> FROZEN
+                {w}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {behavior ? (
+          <div className="space-y-4">
+            <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-300">
+              <span className="font-semibold text-cyan-400">Diagnostic Summary: </span>
+              {behavior.summary}
+            </div>
+
+            {/* Baseline vs Current stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="p-3 bg-slate-950/40 border border-slate-800/80 rounded-lg">
+                <span className="text-slate-500 block">Avg Tx Amount</span>
+                <span className="font-bold text-slate-200 font-mono mt-0.5 block">
+                  ${behavior.baseline.avg_transaction_amount.toFixed(2)} (±${behavior.baseline.std_dev_amount.toFixed(2)})
                 </span>
-              )}
+              </div>
+              <div className="p-3 bg-slate-950/40 border border-slate-800/80 rounded-lg">
+                <span className="text-slate-500 block">Avg Velocity</span>
+                <span className="font-bold text-slate-200 font-mono mt-0.5 block">
+                  {behavior.baseline.avg_velocity_per_hour.toFixed(2)} tx/hr
+                </span>
+              </div>
+              <div className="p-3 bg-slate-950/40 border border-slate-800/80 rounded-lg">
+                <span className="text-slate-500 block">Window Volume</span>
+                <span className="font-bold text-slate-200 font-mono mt-0.5 block">
+                  ${behavior.recent_volume.toFixed(2)} ({behavior.recent_transaction_count} tx)
+                </span>
+              </div>
+              <div className="p-3 bg-slate-950/40 border border-slate-800/80 rounded-lg">
+                <span className="text-slate-500 block">Anomaly Score</span>
+                <span className={`font-bold font-mono mt-0.5 block ${behavior.anomaly_score >= 60 ? 'text-rose-400' : 'text-slate-300'}`}>
+                  {behavior.anomaly_score.toFixed(1)} / 100
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-4 text-xs text-slate-400 mt-2">
-              <span className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-cyan-400" />
-                Owner: <span className="text-slate-200 font-medium">{account.owner_name || account.owner_id || 'Unknown'}</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <Building className="h-3.5 w-3.5 text-indigo-400" />
-                Bank: <span className="text-slate-200 font-medium">{account.bank_name || account.bank_id || 'Apex Bank'}</span>
-              </span>
-              <span>Type: <span className="text-slate-200 font-medium">{account.account_type}</span></span>
-            </div>
-          </div>
 
-          <div className="text-right text-xs text-slate-400 space-y-1">
-            <div>Model Version: <span className="text-cyan-400 font-mono">{account.model_version}</span></div>
-            <div>Evaluated: <span className="text-slate-200">{account.calculated_at ? new Date(account.calculated_at).toLocaleTimeString() : 'Real-time'}</span></div>
-          </div>
-        </div>
-
-        {/* Graph Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
-          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
-            <span className="text-slate-400">PageRank Centrality</span>
-            <div className="text-lg font-bold text-cyan-400 mt-1">{account.features.pagerank.toFixed(3)}</div>
-          </div>
-          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
-            <span className="text-slate-400">Network Degree</span>
-            <div className="text-lg font-bold text-slate-200 mt-1">
-              {account.features.total_degree} <span className="text-xs text-slate-400 font-normal">(In {account.features.in_degree}, Out {account.features.out_degree})</span>
-            </div>
-          </div>
-          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
-            <span className="text-slate-400">Louvain Community</span>
-            <div className="text-lg font-bold text-indigo-400 mt-1">
-              {account.features.louvain_community_id !== undefined ? `Group ${account.features.louvain_community_id}` : 'None'}
-            </div>
-          </div>
-          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs">
-            <span className="text-slate-400">Total Transacted Volume</span>
-            <div className="text-lg font-bold text-emerald-400 mt-1">
-              ${account.features.total_volume.toLocaleString()}
-            </div>
-          </div>
-        </div>
-
-        {/* Explainable Risk Factors Breakdown */}
-        {riskProfile && riskProfile.major_risk_factors.length > 0 && (
-          <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400">
-              <Sparkles className="h-4 w-4" />
-              Ranked Risk Factors & Topological Evidence
-            </div>
-            <div className="space-y-2 pt-1">
-              {riskProfile.major_risk_factors.map((rf, idx) => (
-                <div key={idx} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 flex items-start justify-between gap-3 text-xs">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-200">{rf.factor_type.replace('_', ' ')}</span>
-                      {rf.evidence_reference && (
-                        <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded">
-                          {rf.evidence_reference}
-                        </span>
-                      )}
+            {/* Detected Anomalies List */}
+            {behavior.anomalies.length > 0 && (
+              <div className="space-y-2 pt-2">
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                  Active Behavioral Deviations ({behavior.anomalies.length})
+                </span>
+                <div className="space-y-2">
+                  {behavior.anomalies.map((anom) => (
+                    <div
+                      key={anom.anomaly_id}
+                      className="p-3 bg-rose-950/20 border border-rose-500/30 rounded-lg flex items-start justify-between gap-3 text-xs"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-rose-300">{anom.anomaly_type}</span>
+                          <span className="px-1.5 py-0.5 bg-rose-500/20 text-rose-400 text-[10px] font-bold rounded">
+                            {anom.deviation_ratio.toFixed(1)}x baseline
+                          </span>
+                        </div>
+                        <p className="text-slate-400">{anom.description}</p>
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                        {new Date(anom.detected_at).toLocaleTimeString()}
+                      </span>
                     </div>
-                    <p className="text-slate-400 text-[11px]">{rf.description}</p>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300 shrink-0">
-                    Weight: {rf.weight.toFixed(1)}x
-                  </span>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
+        ) : (
+          <div className="text-xs text-slate-500 text-center py-4">Calculating behavioral baseline...</div>
         )}
       </div>
+
+      {/* Similar Suspect Entities */}
+      {similarEntities && similarEntities.similar_entities.length > 0 && (
+        <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 shadow-md space-y-3">
+          <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <Compass className="h-4 w-4 text-cyan-400" />
+            Topological & Behavioral Peer Similarity
+          </h3>
+          <p className="text-xs text-slate-400">
+            Entities sharing high counterparty overlap, community co-membership, and transaction profiles.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+            {similarEntities.similar_entities.map((sim) => (
+              <div
+                key={sim.target_entity_id}
+                onClick={() => onSelectAccount(sim.target_entity_id)}
+                className="p-3.5 bg-slate-950/60 hover:bg-slate-950 border border-slate-800 hover:border-cyan-500/30 rounded-xl transition-all cursor-pointer space-y-2 text-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-bold text-cyan-400">{sim.target_entity_id}</span>
+                  <span className="px-2 py-0.5 bg-cyan-950/60 border border-cyan-500/30 text-cyan-400 font-bold rounded text-[11px]">
+                    {(sim.similarity_score * 100).toFixed(0)}% Similarity
+                  </span>
+                </div>
+                <p className="text-slate-400 text-[11px]">{sim.explanation}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Interactive Subgraph Neighborhood */}
       {graphData && (

@@ -1,4 +1,4 @@
-﻿"""
+"""
 FinGraph FastAPI Dependency Injection Provider.
 Provides singleton Neo4j client, DetectionEngine, GDSManager, RiskEngine, and service instances to route handlers.
 """
@@ -27,6 +27,9 @@ from backend.app.services.dashboard_service import DashboardService
 from backend.app.services.investigation_service import InvestigationService
 from backend.app.services.case_service import CaseService, get_case_service
 from backend.app.services.intelligence_service import IntelligenceService
+from backend.app.services.network_intelligence_service import NetworkIntelligenceService
+from backend.app.services.behavior_anomaly_service import BehaviorAnomalyService
+from backend.app.services.feature_service import FeatureService
 
 logger = logging.getLogger("FinGraph.Dependencies")
 
@@ -165,3 +168,61 @@ def get_intelligence_service(
         case_service=case_service,
         audit_service=audit_service,
     )
+
+
+def get_network_intelligence_service(
+    client: Neo4jClient = Depends(get_neo4j_client),
+    detection_engine: DetectionEngine = Depends(get_detection_engine),
+    risk_engine: ExplainableRiskEngine = Depends(get_risk_engine),
+    account_service: AccountService = Depends(get_account_service),
+    alert_service: AlertService = Depends(get_alert_service),
+    case_service: CaseService = Depends(get_case_service),
+    audit_service: AuditService = Depends(get_audit_service),
+) -> NetworkIntelligenceService:
+    """Returns NetworkIntelligenceService instance."""
+    return NetworkIntelligenceService(
+        client=client,
+        detection_engine=detection_engine,
+        risk_engine=risk_engine,
+        account_service=account_service,
+        alert_service=alert_service,
+        case_service=case_service,
+        audit_service=audit_service,
+    )
+
+
+def get_behavior_anomaly_service(
+    client: Neo4jClient = Depends(get_neo4j_client),
+    account_service: AccountService = Depends(get_account_service),
+    detection_engine: DetectionEngine = Depends(get_detection_engine),
+    risk_engine: ExplainableRiskEngine = Depends(get_risk_engine),
+) -> BehaviorAnomalyService:
+    """Returns BehaviorAnomalyService instance."""
+    return BehaviorAnomalyService(
+        client=client,
+        account_service=account_service,
+        detection_engine=detection_engine,
+        risk_engine=risk_engine,
+    )
+
+
+def get_feature_service(
+    client: Neo4jClient = Depends(get_neo4j_client),
+    account_service: AccountService = Depends(get_account_service),
+    detection_engine: DetectionEngine = Depends(get_detection_engine),
+    risk_engine: ExplainableRiskEngine = Depends(get_risk_engine),
+    gds_manager: GDSManager = Depends(get_gds_manager),
+    alert_service: AlertService = Depends(get_alert_service),
+    case_service: CaseService = Depends(get_case_service),
+) -> FeatureService:
+    """Returns FeatureService instance."""
+    return FeatureService(
+        client=client,
+        account_service=account_service,
+        detection_engine=detection_engine,
+        risk_engine=risk_engine,
+        gds_manager=gds_manager,
+        alert_service=alert_service,
+        case_service=case_service,
+    )
+

@@ -7,9 +7,9 @@
 [![Neo4j](https://img.shields.io/badge/Graph%20DB-Neo4j%205%20%2B%20GDS-blue.svg)](https://neo4j.com/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-teal.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/Frontend-React%2018%20%2B%20D3-cyan.svg)](https://react.dev/)
-[![Tests](https://img.shields.io/badge/Tests-144%20Passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-158%20Passed-brightgreen.svg)](tests/)
 
-> **Enterprise-Grade FinTech & AML Graph Analytics System** detecting multi-entity suspicious financial syndicates using high-throughput stream ingestion, graph topological pattern detection, Neo4j Graph Data Science (GDS) algorithms, real-time WebSockets, cryptographic case management with SHA-256 evidence vaults, and an interactive analyst investigation workstation with Role-Based Access Control (RBAC).
+> **Enterprise-Grade FinTech & AML Graph Analytics System** detecting multi-entity suspicious financial syndicates using high-throughput stream ingestion, graph topological pattern detection, Neo4j Graph Data Science (GDS) algorithms, real-time WebSockets, cryptographic case management with SHA-256 evidence vaults, automated fraud network discovery, windowed behavioral anomaly detection, and normalized ML-ready feature generation with an interactive analyst workstation.
 
 ---
 
@@ -39,6 +39,7 @@ Point-in-time transactional rules fail to capture **topological network structur
 9. Interactive analyst dashboard in **React + D3.js** with path highlighting, subgraph inspection, dossier triage, and a **"Freeze Account"** remediation workflow.
 10. Hardened production security with **RFC 7519 JWT Auth**, **PBKDF2 password hashing**, **RBAC guards**, **rate limiting**, **Prometheus observability**, and non-root Docker deployments.
 11. **Phase 11 Advanced Fraud Intelligence & Case Management**: End-to-end investigation case lifecycle (`OPEN` $\to$ `IN_PROGRESS` $\to$ `ESCALATED` $\to$ `RESOLVED` $\to$ `CLOSED`), cryptographic evidence vault with SHA-256 integrity digests, unified multi-source chronological forensic timelines, syndicate alert correlation, and prescriptive next-step recommendations.
+12. **Phase 12 Fraud Network Intelligence, Behavioral Anomaly & ML-Ready Analytics**: Automated discovery of collusive fraud rings and Louvain community syndicates, transparent 5-factor network risk scoring ($0-100$), member role inference (`ORIGINATOR`, `AGGREGATOR`, `DISPERSER`, `MULE`, `INTERMEDIARY`), 1-click case promotion, windowed behavioral anomaly detection (`5m`, `1h`, `24h`, `7d`, `30d`), multi-signal suspect entity similarity, and normalized 18-signal ML feature store generation with batch CSV/JSON export.
 
 ```
 Transaction Simulator
@@ -56,15 +57,15 @@ Cypher Detectors   Neo4j GDS Analytics
         ↓
  Explainable Risk Engine (0–100 Scoring & Evidence)
         ↓
- Phase 11 Intelligence & Case Management Vault
- (Cases, Chronological Timelines, Alert Correlation, Recommendations)
+ Phase 11 & 12 Intelligence, Syndicate Discovery & Behavioral Store
+ (Syndicates, Baselines, Windowed Anomalies, Cases, Timelines, ML Store)
         ↓
  FastAPI REST & WebSocket Backend
         ↓
  ┌──────┴──────────────────┐
  ↓                         ↓
 React 18 + D3 Dashboard   Prometheus & Health Probes
-(JWT Auth, RBAC & Cases)  (/metrics, /live, /ready)
+(Networks, Cases, Graphs) (/metrics, /live, /ready)
 ```
 
 ---

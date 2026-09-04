@@ -1,4 +1,4 @@
-﻿"""
+"""
 FinGraph Graph Visualization Business Service.
 Extracts bounded local subgraph neighborhoods, suspicious sub-networks,
 and common counterparty intersections for interactive network forensics.
@@ -227,3 +227,85 @@ class GraphService:
         """
         records = self.client.execute_query(cypher, {"acc_a": account_a, "acc_b": account_b})
         return records
+
+    def get_network_subgraph(
+        self,
+        member_account_ids: List[str],
+    ) -> GraphPayload:
+        """Constructs bounded subgraph highlighting all member accounts and interconnecting transfers."""
+        if not member_account_ids:
+            return GraphPayload(
+                focal_account_id=None,
+                nodes=[],
+                edges=[],
+                is_truncated=False,
+                total_nodes=0,
+                total_edges=0,
+            )
+
+        focal_id = member_account_ids[0]
+        # Query transfers between these member accounts
+        cypher = """
+        MATCH (src:Account)-[r:TRANSFERRED_TO]->(dst:Account)
+        WHERE src.account_id IN $members AND dst.account_id IN $members
+        RETURN
+            src.account_id AS source_id,
+            src.risk_score AS source_risk,
+            src.risk_level AS source_level,
+            dst.account_id AS target_id,
+            dst.risk_score AS target_risk,
+            dst.risk_level AS target_level,
+            r.transaction_id AS transaction_id,
+            r.amount AS amount,
+            r.currency AS currency,
+            r.timestamp AS timestamp,
+            r.scenario_id AS scenario_id
+        LIMIT 100
+        """
+        records = self.client.execute_query(cypher, {"members": member_account_ids})
+
+        nodes_dict: Dict[str, GraphNode] = {}
+        for m_id in member_account_ids:
+            acc_detail = self.risk_engine.account_service.get_account_by_id(m_id) if hasattr(self.risk_engine, "account_service") else None
+            r_score = acc_detail.risk_score if acc_detail else 70.0
+            r_level = acc_detail.risk_level if acc_detail else RiskLevel.HIGH
+            nodes_dict[m_id] = GraphNode(
+                id=m_id,
+                label=m_id,
+                type="Account",
+                risk_score=r_score,
+                risk_level=r_level,
+                is_focal=m_id == focal_id,
+            )
+
+        edges: List[GraphEdge] = []
+        for r in records:
+            s_id = r["source_id"]
+            t_id = r["target_id"]
+            if s_id not in nodes_dict:
+                nodes_dict[s_id] = GraphNode(id=s_id, label=s_id, type="Account", risk_score=r.get("source_risk", 50.0), risk_level=r.get("source_level", RiskLevel.MEDIUM))
+            if t_id not in nodes_dict:
+                nodes_dict[t_id] = GraphNode(id=t_id, label=t_id, type="Account", risk_score=r.get("target_risk", 50.0), risk_level=r.get("target_level", RiskLevel.MEDIUM))
+
+            edges.append(
+                GraphEdge(
+                    id=f"tx_{r['transaction_id']}",
+                    source=s_id,
+                    target=t_id,
+                    type="TRANSFERRED_TO",
+                    label="TRANSFERRED_TO",
+                    amount=float(r.get("amount", 0.0)),
+                    currency=r.get("currency", "USD"),
+                    scenario_id=r.get("scenario_id"),
+                )
+            )
+
+        nodes_list = list(nodes_dict.values())
+        return GraphPayload(
+            focal_account_id=focal_id,
+            nodes=nodes_list,
+            edges=edges,
+            is_truncated=False,
+            total_nodes=len(nodes_list),
+            total_edges=len(edges),
+        )

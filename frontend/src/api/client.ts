@@ -1,6 +1,20 @@
 ﻿import axios from 'axios';
 import {
   AccountDetail,
+  FeatureStoreExportResponse,
+  FeatureStoreExportRequest,
+  EntityFeatureVector,
+  FeatureDefinition,
+  EntitySimilarityResponse,
+  EntityBehaviorResponse,
+  EntityBehaviorBaseline,
+  NetworkCreateCaseRequest,
+  NetworkSummary,
+  NetworkRiskExplanationResponse,
+  NetworkMemberResponse,
+  NetworkListResponse,
+  NetworkEvidenceResponse,
+  NetworkDetail,
   AccountSummary,
   AccountTransactionItem,
   AlertCorrelation,
@@ -261,5 +275,73 @@ export const apiClient = {
       params: { q: query },
     });
     return res.data.data;
+  },
+
+  // Fraud Networks & Syndicates (Phase 12)
+  listNetworks: async (params?: any) => {
+    const res = await api.get<NetworkListResponse>('/api/v1/networks', { params });
+    return res.data;
+  },
+  discoverNetworks: async (forceRefresh: boolean = true) => {
+    const res = await api.post<NetworkSummary[]>('/api/v1/networks/discover', null, {
+      params: { force_refresh: forceRefresh },
+    });
+    return res.data;
+  },
+  getNetworkDetail: async (networkId: string) => {
+    const res = await api.get<NetworkDetail>(`/api/v1/networks/${networkId}`);
+    return res.data;
+  },
+  getNetworkMembers: async (networkId: string) => {
+    const res = await api.get<NetworkMemberResponse>(`/api/v1/networks/${networkId}/members`);
+    return res.data;
+  },
+  getNetworkSubgraph: async (networkId: string) => {
+    const res = await api.get<GraphPayload>(`/api/v1/networks/${networkId}/subgraph`);
+    return res.data;
+  },
+  getNetworkRiskExplanation: async (networkId: string) => {
+    const res = await api.get<NetworkRiskExplanationResponse>(`/api/v1/networks/${networkId}/risk-explanation`);
+    return res.data;
+  },
+  getNetworkEvidence: async (networkId: string) => {
+    const res = await api.get<NetworkEvidenceResponse>(`/api/v1/networks/${networkId}/evidence`);
+    return res.data;
+  },
+  promoteNetworkToCase: async (networkId: string, req: NetworkCreateCaseRequest) => {
+    const res = await api.post<InvestigationCase>(`/api/v1/networks/${networkId}/create-case`, req);
+    return res.data;
+  },
+
+  // Behavioral Anomaly & Similarity (Phase 12)
+  getEntityBehavior: async (entityId: string, window: string = '24h') => {
+    const res = await api.get<EntityBehaviorResponse>(`/api/v1/entities/${entityId}/behavior`, {
+      params: { window },
+    });
+    return res.data;
+  },
+  getEntityBaseline: async (entityId: string) => {
+    const res = await api.get<EntityBehaviorBaseline>(`/api/v1/entities/${entityId}/baseline`);
+    return res.data;
+  },
+  getSimilarEntities: async (entityId: string, topK: number = 5) => {
+    const res = await api.get<EntitySimilarityResponse>(`/api/v1/entities/${entityId}/similar`, {
+      params: { top_k: topK },
+    });
+    return res.data;
+  },
+
+  // ML Feature Store & Generation (Phase 12)
+  getFeatureCatalog: async () => {
+    const res = await api.get<FeatureDefinition[]>('/api/v1/features/catalog');
+    return res.data;
+  },
+  getEntityFeatures: async (entityId: string) => {
+    const res = await api.get<EntityFeatureVector>(`/api/v1/features/entity/${entityId}`);
+    return res.data;
+  },
+  exportFeatureStore: async (req: FeatureStoreExportRequest) => {
+    const res = await api.post<FeatureStoreExportResponse>('/api/v1/features/export', req);
+    return res.data;
   },
 };

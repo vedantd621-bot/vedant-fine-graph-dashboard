@@ -13,6 +13,7 @@
 | **Phase 9** | **Real-Time Alerting + Live Stream Updates** | 🟢 **Completed** | 116 Tests Passed | Validated |
 | **Phase 10** | **Production Hardening, Security, Observability & Deployment** | 🟢 **Completed** | 125 Tests Passed | Validated |
 | **Phase 11** | **Advanced Fraud Intelligence & Case Management** | 🟢 **Completed** | 144 Tests Passed | Validated |
+| **Phase 12** | **Fraud Network Intelligence, Behavioral Anomaly & ML-Ready Analytics** | 🟢 **Completed** | 158 Tests Passed | Validated |
 
 ---
 
@@ -71,4 +72,10 @@
   - `backend/app/services/case_service.py` & `intelligence_service.py`: Thread-safe case repository, cryptographic evidence vault, multi-source forensic timeline aggregator, syndicate alert correlation, next-best-action recommendation generator, and bounded graph neighborhood explorer.
   - `backend/app/routes/cases.py`, `intelligence.py`, `graph.py`: 18 REST endpoints covering case lifecycle mutations, investigator assignment, note threads, evidence hashing, entity risk dossiers, alert correlation, and common counterparties.
   - `dashboard/src/pages/CasesPage.tsx`, `components/investigation/TimelineView.tsx`: Full React investigation workspace with status transition controls, note appending, cryptographic evidence viewer, and embedded timelines on Account and Alert detail pages.
-  - **144 passed, 2 skipped (0 failures)** repository-wide with sub-10ms average endpoint latencies.
+- **Phase 12**:
+  - `backend/app/models/networks.py`, `behavior.py`, `features.py`: Schema definitions for collusive rings, syndicates, 5-factor transparent risk scoring, statistical baseline profiles, multi-window anomaly deviations (`5m`, `1h`, `24h`, `7d`, `30d`), multi-signal entity similarity, and 18-feature ML store vectors.
+  - `backend/app/services/network_intelligence_service.py`, `behavior_anomaly_service.py`, `feature_service.py`: Discovery engine for Cypher loops/funnels and Louvain clusters, member role inference (`ORIGINATOR`, `AGGREGATOR`, `DISPERSER`, `MULE`, `INTERMEDIARY`), 1-click case promotion with audit logging, behavioral baseline deviations, explainable peer matching, and high-throughput CSV/JSON feature exports.
+  - `backend/app/routes/networks.py`, `behavior.py`, `features.py`: REST routes for `/api/v1/networks`, `/api/v1/entities/{id}/behavior`, `/api/v1/entities/{id}/similar`, `/api/v1/features/catalog`, `/api/v1/features/export`.
+  - `dashboard/src/pages/FraudNetworksPage.tsx`, `FraudNetworkDetailPage.tsx`: React investigation workspace for collusive syndicates with D3 subgraph rendering, factor breakdown sliders, member tables, and integrated behavioral dossiers on `AccountDetailPage.tsx`.
+  - **158 passed, 2 skipped (0 failures)** across entire test suite. Latency benchmarked with p50 under 1.1ms for discovery, anomaly detection, and similarity calculations.
+

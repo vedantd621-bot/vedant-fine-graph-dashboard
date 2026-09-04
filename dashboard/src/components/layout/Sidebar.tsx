@@ -1,6 +1,7 @@
 ﻿import React from 'react';
 import {
   LayoutDashboard,
+  Share2,
   AlertTriangle,
   Users,
   Compass,
@@ -23,6 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'alerts', label: 'Alerts Catalog', icon: AlertTriangle, badge: openAlertsCount },
     { id: 'accounts', label: 'Account Dossiers', icon: Users },
     { id: 'cases', label: 'Investigation Cases', icon: ShieldAlert },
+    { id: 'networks', label: 'Fraud Networks', icon: Share2 },
     { id: 'investigation', label: 'Forensic Tools', icon: Compass },
   ];
 
