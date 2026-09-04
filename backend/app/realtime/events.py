@@ -51,6 +51,14 @@ class EventType(str, Enum):
     PATTERN_DISCOVERED = "pattern.discovered"
     THREAT_LEVEL_CHANGED = "threat_level.changed"
     ENTERPRISE_FORECAST_UPDATED = "enterprise.forecast_updated"
+    DETECTION_GAP_DETECTED = "detection.gap_detected"
+    DETECTION_RECOMMENDATION_CREATED = "detection.recommendation_created"
+    DETECTION_RECOMMENDATION_APPROVED = "detection.recommendation_approved"
+    DETECTION_RECOMMENDATION_REJECTED = "detection.recommendation_rejected"
+    DETECTOR_SHADOW_COMPLETED = "detector.shadow_completed"
+    RISK_CALIBRATION_UPDATED = "risk.calibration_updated"
+    THREAT_PROPAGATION_DETECTED = "threat.propagation_detected"
+    THREAT_PROPAGATION_ESCALATED = "threat.propagation_escalated"
     SYSTEM_PING = "system.ping"
     SYSTEM_PONG = "system.pong"
     ERROR = "error"
@@ -411,11 +419,56 @@ class ThreatLevelChangedPayload(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
-class ErrorPayload(BaseModel):
-    """Structured WebSocket error payload."""
-    code: str
-    message: str
-    details: Optional[Any] = None
+class DetectionGapDetectedPayload(BaseModel):
+    """Payload emitted when an uncovered detection gap is discovered."""
+    gap_id: str
+    title: str
+    pattern_type: str
+    priority: str
+    exposure: float
+    uncovered_motifs: int
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class DetectionRecommendationPayload(BaseModel):
+    """Payload emitted when a detector recommendation is created, approved, or rejected."""
+    recommendation_id: str
+    status: str
+    title: Optional[str] = None
+    reviewer: Optional[str] = None
+    notes: Optional[str] = None
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class DetectorShadowCompletedPayload(BaseModel):
+    """Payload emitted when a shadow detector simulation completes."""
+    simulation_id: str
+    detector_id: str
+    alerts_would_fire: int
+    novel_detections: int
+    ground_truth_status: str
+    execution_time_ms: float
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class RiskCalibrationUpdatedPayload(BaseModel):
+    """Payload emitted when risk calibration metrics are updated."""
+    report_id: str
+    window_days: int
+    overall_confirmation_rate: float
+    drift_detected: bool
+    adjustments_count: int
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ThreatPropagationDetectedPayload(BaseModel):
+    """Payload emitted when multi-hop threat propagation is simulated or escalated."""
+    analysis_id: str
+    origin_entity_id: str
+    propagation_score: float
+    total_affected_entities: int
+    total_exposure: float
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 def create_realtime_event(event_type: EventType, data: Any) -> RealtimeEvent:

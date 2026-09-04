@@ -295,3 +295,27 @@ def get_pattern_discovery_service() -> PatternDiscoveryService:
     """Returns singleton PatternDiscoveryService."""
     from backend.app.pattern_discovery.service import get_pattern_discovery_service as _get_pds
     return _get_pds()
+
+
+def get_autonomous_intelligence_service() -> "AutonomousIntelligenceService":
+    """Returns singleton AutonomousIntelligenceService."""
+    from backend.app.autonomous_intelligence.service import get_autonomous_intelligence_service as _get_ais
+    return _get_ais()
+
+
+def get_shadow_detection_service() -> "ShadowDetectionService":
+    """Returns singleton ShadowDetectionService."""
+    from backend.app.shadow_detection.service import get_shadow_detection_service as _get_sds
+    return _get_sds()
+
+
+def get_risk_calibration_service() -> "RiskCalibrationService":
+    """Returns singleton RiskCalibrationService."""
+    from backend.app.risk_calibration.service import get_risk_calibration_service as _get_rcs
+    return _get_rcs()
+
+
+def get_threat_propagation_service() -> "ThreatPropagationService":
+    """Returns singleton ThreatPropagationService."""
+    from backend.app.threat_propagation.service import get_threat_propagation_service as _get_tps
+    return _get_tps()

@@ -14,6 +14,7 @@ from starlette.responses import Response
 from backend.app.config import get_api_config
 
 
+_shared_ip_history: DefaultDict[str, Deque[float]] = collections.defaultdict(collections.deque)
 _global_rate_limiter: Optional["RateLimiterMiddleware"] = None
 
 
@@ -22,13 +23,13 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app):
         super().__init__(app)
-        self._ip_history: DefaultDict[str, Deque[float]] = collections.defaultdict(collections.deque)
+        self._ip_history = _shared_ip_history
         global _global_rate_limiter
         _global_rate_limiter = self
 
     def clear(self):
         """Clears all stored rate limit history."""
-        self._ip_history.clear()
+        _shared_ip_history.clear()
 
     async def dispatch(self, request: Request, call_next) -> Response:
         cfg = get_api_config()

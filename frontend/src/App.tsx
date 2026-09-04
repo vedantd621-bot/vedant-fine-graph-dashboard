@@ -19,6 +19,8 @@ import { FraudCampaignDetailPage } from './pages/FraudCampaignDetailPage';
 import { NetworkEvolutionPage } from './pages/NetworkEvolutionPage';
 import { EarlyWarningPage } from './pages/EarlyWarningPage';
 import { PatternIntelligencePage } from './pages/PatternIntelligencePage';
+import { AdaptiveIntelligencePage } from './pages/AdaptiveIntelligencePage';
+import { ThreatPropagationPage } from './pages/ThreatPropagationPage';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { LoginPage } from './auth/LoginPage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -123,6 +125,10 @@ export const AppContent: React.FC = () => {
             {activeTab === 'network-evolution' && <NetworkEvolutionPage />}
 
             {activeTab === 'pattern-intelligence' && <PatternIntelligencePage />}
+
+            {activeTab === 'adaptive-intelligence' && <AdaptiveIntelligencePage />}
+
+            {activeTab === 'threat-propagation' && <ThreatPropagationPage />}
 
             {activeTab === 'campaign-detail' && selectedCampaignId && (
               <FraudCampaignDetailPage

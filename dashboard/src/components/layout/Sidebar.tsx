@@ -30,6 +30,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'early-warnings', label: 'Early Warning Center', icon: AlertTriangle },
     { id: 'network-evolution', label: 'Network Evolution', icon: Activity },
     { id: 'pattern-intelligence', label: 'Pattern Intelligence', icon: Layers },
+    { id: 'adaptive-intelligence', label: 'Adaptive Intelligence', icon: Zap },
+    { id: 'threat-propagation', label: 'Threat Propagation', icon: Activity },
     { id: 'case-intelligence', label: 'Case Intelligence', icon: Share2 },
     { id: 'dashboard', label: 'Executive Overview', icon: LayoutDashboard },
     { id: 'operations', label: 'Fraud Ops Dashboard', icon: TrendingUp },

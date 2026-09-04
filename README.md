@@ -205,3 +205,10 @@ python -m pytest simulator/tests/ tests/ -v
 - **Proactive Early Warnings**: Multi-signal trigger rules, non-destructive recommendations, and investigator lifecycle workflows.
 - **Pattern Discovery & Similarity**: Recurring graph motif extraction and deterministic structural similarity matching.
 - **Enterprise Threat Level**: Executive composite threat evaluation ($0–100$) and predictive threat forecasting.
+
+### Phase 17: Autonomous Fraud Intelligence & Threat Propagation
+- **Autonomous Intelligence**: Continuous detection gap discovery & adaptive detector recommendations.
+- **Human Approval Gate**: Strict RBAC lifecycle governance (`PROPOSED` -> `UNDER_REVIEW` -> `APPROVED` -> `DEPLOYED`).
+- **Shadow Simulation**: Non-destructive evaluation of candidate detector rules against historical telemetry.
+- **Risk Calibration**: 5-bucket empirical outcome matrix vs investigation verdicts.
+- **Threat Propagation**: Multi-hop contagion explorer with 6-factor deterministic index and topology visualizer.

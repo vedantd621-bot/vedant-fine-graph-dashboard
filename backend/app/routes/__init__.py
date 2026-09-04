@@ -42,3 +42,4 @@ __all__ = [
     "operations_router",
     "websocket_router",
 ]
+from backend.app.routes.autonomous_intelligence import router as autonomous_intelligence_router

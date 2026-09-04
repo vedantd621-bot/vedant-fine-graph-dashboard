@@ -1,3 +1,4 @@
+from backend.app.routes.autonomous_intelligence import router as autonomous_intelligence_router
 """
 FinGraph FastAPI Main Application.
 Provides hardened RESTful APIs and real-time WebSockets with JWT Authentication, RBAC,
@@ -201,6 +202,7 @@ app.include_router(graph_router)
 app.include_router(dashboard_router)
 app.include_router(investigation_router)
 app.include_router(websocket_router)
+app.include_router(autonomous_intelligence_router)
 
 
 

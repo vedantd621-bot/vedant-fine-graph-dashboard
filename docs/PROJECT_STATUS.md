@@ -102,3 +102,12 @@
   - `backend/app/routes/advanced_intelligence.py`: 16 hardened REST endpoints mounted under `/api/v1/advanced-intelligence/*`.
   - `dashboard/` & `frontend/`: React pages `FraudCommandCenterPage.tsx` (V2), `NetworkEvolutionPage.tsx`, `EarlyWarningPage.tsx`, `PatternIntelligencePage.tsx`.
   - **171 passed, 2 skipped (0 failures)** across full regression suite with 100-iteration empirical benchmarks in `docs/performance/phase-16.md` (all sub-millisecond latencies).
+
+## Phase 17: Autonomous Fraud Intelligence, Adaptive Detection & Threat Propagation (Completed)
+- **Autonomous Intelligence Engine**: Detection gap scanner across multi-hop cycles, proxy hops, and dense communities.
+- **Adaptive Recommendations**: Deterministic tuning proposals with human-in-the-loop review lifecycle (Proposed -> Under Review -> Approved -> Deployed).
+- **Shadow Detector Simulation Sandbox**: Read-only evaluation of candidate rules with ground truth validation.
+- **Risk Score Outcome Calibration**: 5-bucket empirical confirmation matrices (0-20 to 81-100) and threshold tuning.
+- **Threat Propagation Analysis**: 6-factor deterministic contagion index ($0-100$), step timeline, and D3 topology graph.
+- **Workstations & UI**: `AdaptiveIntelligencePage.tsx` and `ThreatPropagationPage.tsx`.
+- **Test Suite**: 188 passing unit/integration tests across Phases 1–17.

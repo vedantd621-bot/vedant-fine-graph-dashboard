@@ -569,4 +569,72 @@ export const apiClient = {
     const res = await api.get<ApiResponse<any>>('/api/v1/advanced-intelligence/command-center/advanced-summary');
     return res.data;
   },
+
+  // Phase 17: Autonomous Intelligence, Shadow Detection, Risk Calibration & Threat Propagation
+  getAutonomousSummary: async () => {
+    const res = await api.get<ApiResponse<AutonomousIntelligenceSummary>>('/api/v1/autonomous-intelligence/summary');
+    return res.data;
+  },
+  listDetectionGaps: async (priority?: string) => {
+    const params = priority ? { priority } : {};
+    const res = await api.get<ApiResponse<DetectionGap[]>>('/api/v1/autonomous-intelligence/gaps', { params });
+    return res.data;
+  },
+  getDetectionGap: async (gapId: string) => {
+    const res = await api.get<ApiResponse<DetectionGap>>(`/api/v1/autonomous-intelligence/gaps/${gapId}`);
+    return res.data;
+  },
+  triggerDetectionGapScan: async () => {
+    const res = await api.post<ApiResponse<DetectionGap[]>>('/api/v1/autonomous-intelligence/gaps/scan');
+    return res.data;
+  },
+  listDetectorRecommendations: async (params?: { status?: string; rec_type?: string }) => {
+    const res = await api.get<ApiResponse<DetectorRecommendation[]>>('/api/v1/autonomous-intelligence/recommendations', { params });
+    return res.data;
+  },
+  getDetectorRecommendation: async (recId: string) => {
+    const res = await api.get<ApiResponse<DetectorRecommendation>>(`/api/v1/autonomous-intelligence/recommendations/${recId}`);
+    return res.data;
+  },
+  reviewDetectorRecommendation: async (recId: string, req: RecommendationReviewRequest) => {
+    const res = await api.post<ApiResponse<DetectorRecommendation>>(`/api/v1/autonomous-intelligence/recommendations/${recId}/review`, req);
+    return res.data;
+  },
+  listDetectorVersions: async (detectorId?: string) => {
+    const params = detectorId ? { detector_id: detectorId } : {};
+    const res = await api.get<ApiResponse<DetectorVersion[]>>('/api/v1/autonomous-intelligence/detector-versions', { params });
+    return res.data;
+  },
+  runShadowSimulation: async (req: ShadowSimulationRequest) => {
+    const res = await api.post<ApiResponse<ShadowSimulationResult>>('/api/v1/autonomous-intelligence/shadow/simulate', req);
+    return res.data;
+  },
+  listShadowSimulations: async (detectorId?: string) => {
+    const params = detectorId ? { detector_id: detectorId } : {};
+    const res = await api.get<ApiResponse<ShadowSimulationResult[]>>('/api/v1/autonomous-intelligence/shadow/simulations', { params });
+    return res.data;
+  },
+  getShadowSimulation: async (simId: string) => {
+    const res = await api.get<ApiResponse<ShadowSimulationResult>>(`/api/v1/autonomous-intelligence/shadow/simulations/${simId}`);
+    return res.data;
+  },
+  getRiskCalibrationReport: async (windowDays: number = 30) => {
+    const res = await api.get<ApiResponse<RiskCalibrationReport>>('/api/v1/autonomous-intelligence/risk-calibration', { params: { window_days: windowDays } });
+    return res.data;
+  },
+  refreshRiskCalibration: async (windowDays: number = 30) => {
+    const res = await api.post<ApiResponse<RiskCalibrationReport>>('/api/v1/autonomous-intelligence/risk-calibration/refresh', null, { params: { window_days: windowDays } });
+    return res.data;
+  },
+  analyzeThreatPropagation: async (req: { origin_entity_id: string; max_hops?: number; time_window_hours?: number }) => {
+    const res = await api.post<ApiResponse<ThreatPropagationAnalysis>>('/api/v1/autonomous-intelligence/threat-propagation/analyze', req);
+    return res.data;
+  },
+  getEntityThreatPropagation: async (entityId: string, maxHops: number = 3, timeWindowHours: number = 24) => {
+    const res = await api.get<ApiResponse<ThreatPropagationAnalysis>>(`/api/v1/autonomous-intelligence/threat-propagation/entities/${entityId}`, {
+      params: { max_hops: maxHops, time_window_hours: timeWindowHours }
+    });
+    return res.data;
+  },
+
 };
