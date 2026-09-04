@@ -1,4 +1,6 @@
-# FinGraph — Real-Time Fraud Syndicate Analytics Platform
+# FinGraph (v1.0.0 Production Release)
+
+> Enterprise Real-Time Fraud Intelligence, Graph Analytics & Autonomous Operations Platform.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10+-brightgreen.svg)](https://www.python.org/)
