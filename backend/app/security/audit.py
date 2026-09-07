@@ -39,6 +39,8 @@ class AuditService:
         self._logs.insert(0, log)
         return log
 
+    log = record
+
     def list_logs(
         self,
         action: Optional[str] = None,

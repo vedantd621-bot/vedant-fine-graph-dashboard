@@ -3,6 +3,9 @@ import { TenantManagementPage } from './pages/TenantManagementPage';
 import { PolicyManagementPage } from './pages/PolicyManagementPage';
 import { UserManagementPage } from './pages/UserManagementPage';
 import { TeamManagementPage } from './pages/TeamManagementPage';
+import { AnalyticsExplorerPage } from './pages/AnalyticsExplorerPage';
+import { ReportingCenterPage } from './pages/ReportingCenterPage';
+import { DecisioningSandboxPage } from './pages/DecisioningSandboxPage';
 import React, { useState } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
@@ -121,6 +124,15 @@ export const AppContent: React.FC = () => {
           />
 
           <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full">
+            {activeTab === 'control-center' && <EnterpriseControlCenterPage />}
+            {activeTab === 'tenants' && <TenantManagementPage />}
+            {activeTab === 'policies' && <PolicyManagementPage />}
+            {activeTab === 'user-management' && <UserManagementPage />}
+            {activeTab === 'team-management' && <TeamManagementPage />}
+            {activeTab === 'analytics-explorer' && <AnalyticsExplorerPage />}
+            {activeTab === 'reporting-center' && <ReportingCenterPage />}
+            {activeTab === 'decisioning-sandbox' && <DecisioningSandboxPage />}
+
             {activeTab === 'command-center' && (
               <FraudCommandCenterPage
                 onNavigate={setActiveTab}

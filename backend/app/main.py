@@ -32,6 +32,9 @@ from backend.app.middleware.security_headers import SecurityHeadersMiddleware
 from backend.app.realtime.connection_manager import get_connection_manager
 from backend.app.realtime.kafka_consumer import get_realtime_kafka_consumer
 from backend.app.routes import (
+    decisioning_router,
+    enterprise_analytics_router,
+    reporting_router,
     accounts_router,
     admin_router,
     alerts_router,
@@ -207,6 +210,9 @@ app.include_router(websocket_router)
 app.include_router(autonomous_intelligence_router)
 app.include_router(orchestration_router)
 app.include_router(control_plane_router)
+app.include_router(decisioning_router)
+app.include_router(enterprise_analytics_router)
+app.include_router(reporting_router)
 
 
 

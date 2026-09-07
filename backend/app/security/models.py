@@ -10,14 +10,20 @@ from pydantic import BaseModel, Field
 
 class Role(str, Enum):
     """Hierarchical Role-Based Access Control roles."""
-    ANALYST = "ANALYST"
-    INVESTIGATOR = "INVESTIGATOR"
-    ADMIN = "ADMIN"
     PLATFORM_ADMIN = "PLATFORM_ADMIN"
+    ADMIN = "ADMIN"
+    TENANT_ADMIN = "TENANT_ADMIN"
+    INVESTIGATOR = "INVESTIGATOR"
+    ANALYST = "ANALYST"
+    REVIEWER = "REVIEWER"
+    AUDITOR = "AUDITOR"
+    EXECUTIVE = "EXECUTIVE"
+    READ_ONLY = "READ_ONLY"
 
 
 class Permission(str, Enum):
     """Granular platform and resource permissions."""
+    # Existing core permissions
     ALERT_READ = "ALERT_READ"
     ALERT_UPDATE = "ALERT_UPDATE"
     CASE_READ = "CASE_READ"
@@ -38,6 +44,19 @@ class Permission(str, Enum):
     USER_ADMIN = "USER_ADMIN"
     POLICY_ADMIN = "POLICY_ADMIN"
     PLATFORM_ADMIN = "PLATFORM_ADMIN"
+    
+    # Extended Enterprise Permissions
+    ANALYTICS_READ = "ANALYTICS_READ"
+    REPORT_READ = "REPORT_READ"
+    REPORT_CREATE = "REPORT_CREATE"
+    REPORT_EXPORT = "REPORT_EXPORT"
+    AUDIT_READ = "AUDIT_READ"
+    TENANT_READ = "TENANT_READ"
+    TENANT_WRITE = "TENANT_WRITE"
+    USER_READ = "USER_READ"
+    USER_WRITE = "USER_WRITE"
+    TEAM_READ = "TEAM_READ"
+    TEAM_WRITE = "TEAM_WRITE"
 
 
 class User(BaseModel):

@@ -83,7 +83,14 @@ def get_optional_user(
 def require_role(allowed_roles: List[Role]) -> Callable:
     """Dependency factory restricting route access to specified roles."""
     def role_checker(current_user: User = Depends(get_current_user)) -> User:
-        if current_user.role not in allowed_roles:
+        # Normalize ADMIN and TENANT_ADMIN as equivalent
+        user_role = current_user.role
+        if user_role == Role.ADMIN and Role.TENANT_ADMIN in allowed_roles:
+            return current_user
+        if user_role == Role.TENANT_ADMIN and Role.ADMIN in allowed_roles:
+            return current_user
+
+        if user_role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={
@@ -99,8 +106,8 @@ def require_role(allowed_roles: List[Role]) -> Callable:
 def require_permission(permission: Permission) -> Callable:
     """Dependency factory restricting route access to users holding a specific permission."""
     def permission_checker(current_user: User = Depends(get_current_user)) -> User:
-        # Platform admin or admin holds all standard permissions
-        if current_user.role in [Role.PLATFORM_ADMIN, Role.ADMIN]:
+        # Platform admin or tenant admin holds all standard permissions
+        if current_user.role in [Role.PLATFORM_ADMIN, Role.ADMIN, Role.TENANT_ADMIN]:
             return current_user
 
         user_perms = getattr(current_user, "permissions", [])
@@ -117,9 +124,19 @@ def require_permission(permission: Permission) -> Callable:
     return permission_checker
 
 
-# Convenience role dependencies
-require_analyst = require_role([Role.ANALYST, Role.INVESTIGATOR, Role.ADMIN, Role.PLATFORM_ADMIN])
-require_investigator = require_role([Role.INVESTIGATOR, Role.ADMIN, Role.PLATFORM_ADMIN])
-require_admin = require_role([Role.ADMIN, Role.PLATFORM_ADMIN])
+# Convenience role dependencies covering all personas
+require_analyst = require_role([
+    Role.ANALYST, Role.INVESTIGATOR, Role.ADMIN, Role.PLATFORM_ADMIN,
+    Role.TENANT_ADMIN, Role.REVIEWER, Role.AUDITOR, Role.EXECUTIVE, Role.READ_ONLY
+])
+require_investigator = require_role([
+    Role.INVESTIGATOR, Role.ADMIN, Role.PLATFORM_ADMIN, Role.TENANT_ADMIN
+])
+require_reviewer = require_role([
+    Role.REVIEWER, Role.INVESTIGATOR, Role.ADMIN, Role.PLATFORM_ADMIN, Role.TENANT_ADMIN
+])
+require_admin = require_role([Role.ADMIN, Role.PLATFORM_ADMIN, Role.TENANT_ADMIN])
+require_tenant_admin = require_role([Role.ADMIN, Role.PLATFORM_ADMIN, Role.TENANT_ADMIN])
 require_platform_admin = require_role([Role.PLATFORM_ADMIN])
-require_tenant_admin = require_role([Role.ADMIN, Role.PLATFORM_ADMIN])
+require_auditor = require_role([Role.AUDITOR, Role.ADMIN, Role.PLATFORM_ADMIN, Role.TENANT_ADMIN])
+require_executive = require_role([Role.EXECUTIVE, Role.ADMIN, Role.PLATFORM_ADMIN, Role.TENANT_ADMIN])

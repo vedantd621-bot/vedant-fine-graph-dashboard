@@ -1,7 +1,7 @@
-from backend.app.routes.advanced_intelligence import router as advanced_intelligence_router
 """
 FinGraph API Route Modules.
 """
+from backend.app.routes.advanced_intelligence import router as advanced_intelligence_router
 from backend.app.routes.accounts import router as accounts_router
 from backend.app.routes.admin import router as admin_router
 from backend.app.routes.alerts import router as alerts_router
@@ -20,6 +20,12 @@ from backend.app.routes.networks import router as networks_router
 from backend.app.routes.notifications import router as notifications_router
 from backend.app.routes.operations import router as operations_router
 from backend.app.routes.websocket import router as websocket_router
+from backend.app.routes.autonomous_intelligence import router as autonomous_intelligence_router
+from backend.app.routes.orchestration import router as orchestration_router
+from backend.app.routes.control_plane import router as control_plane_router
+from backend.app.routes.decisioning import router as decisioning_router
+from backend.app.routes.enterprise_analytics import router as enterprise_analytics_router
+from backend.app.routes.reporting import router as reporting_router
 
 __all__ = [
     "advanced_intelligence_router",
@@ -41,13 +47,10 @@ __all__ = [
     "notifications_router",
     "operations_router",
     "websocket_router",
-]
-from backend.app.routes.autonomous_intelligence import router as autonomous_intelligence_router
-from backend.app.routes.orchestration import router as orchestration_router
-from backend.app.routes.control_plane import router as control_plane_router
-
-__all__.extend([
     "autonomous_intelligence_router",
     "orchestration_router",
     "control_plane_router",
-])
+    "decisioning_router",
+    "enterprise_analytics_router",
+    "reporting_router",
+]

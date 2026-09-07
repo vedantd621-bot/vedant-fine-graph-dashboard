@@ -1,6 +1,8 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  BarChart2,
+  FileText,
   Share2,
   AlertTriangle,
   Users,
@@ -27,6 +29,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const navItems = [
     { id: 'control-center', label: 'Control Center', icon: Shield },
+    { id: 'analytics-explorer', label: 'Analytics Explorer', icon: BarChart2 },
+    { id: 'reporting-center', label: 'Reporting Center', icon: FileText },
+    { id: 'decisioning-sandbox', label: 'Decisioning Sandbox', icon: ShieldAlert },
     { id: 'tenants', label: 'Tenants', icon: LayoutDashboard },
     { id: 'policies', label: 'Policy Engine', icon: ShieldAlert },
     { id: 'user-management', label: 'User Identities', icon: Users },

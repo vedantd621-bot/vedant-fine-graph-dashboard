@@ -9,7 +9,7 @@
 [![Neo4j](https://img.shields.io/badge/Graph%20DB-Neo4j%205%20%2B%20GDS-blue.svg)](https://neo4j.com/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-teal.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/Frontend-React%2018%20%2B%20D3-cyan.svg)](https://react.dev/)
-[![Tests](https://img.shields.io/badge/Tests-246%20Passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-264%20Passed-brightgreen.svg)](tests/)
 
 > **Enterprise-Grade FinTech & AML Graph Analytics System** detecting multi-entity suspicious financial syndicates using high-throughput stream ingestion, graph topological pattern detection, Neo4j Graph Data Science (GDS) algorithms, real-time WebSockets, cryptographic case management with SHA-256 evidence vaults, automated fraud network discovery, windowed behavioral anomaly detection, and normalized ML-ready feature generation with an interactive analyst workstation.
 
@@ -142,9 +142,13 @@ FinGraph enforces granular Role-Based Access Control:
 | Role | Permissions | Default Credentials |
 |---|---|---|
 | **`PLATFORM_ADMIN`** | Global tenant administration, policy governance, quotas, system telemetry, configuration versioning. | Username: `platform_admin`<br>Password: `platform_admin_secret_pass_2026` |
-| **`ADMIN`** | Tenant management, user administration, audit inspection, freeze accounts, mutate alerts, manage cases within tenant. | Username: `admin`<br>Password: `admin_secret_pass_2026` |
-| **`INVESTIGATOR`** | Graph investigation, dossier triage, freeze accounts, resolve/suppress alerts, create/manage cases, attach evidence. | Username: `investigator`<br>Password: `investigator_secret_pass_2026` |
+| **`ADMIN` / `TENANT_ADMIN`** | Tenant management, user administration, audit inspection, freeze accounts, mutate alerts, manage cases within tenant. | Username: `admin`<br>Password: `admin_secret_pass_2026` |
+| **`INVESTIGATOR`** | Graph investigation, dossier triage, freeze accounts, resolve/suppress alerts, create/manage cases, attach evidence, generate decisions, run simulations. | Username: `investigator`<br>Password: `investigator_secret_pass_2026` |
+| **`REVIEWER`** | Second-line investigation review, evidence verification, decision override evaluation. | Username: `reviewer`<br>Password: `reviewer_secret_pass_2026` |
+| **`AUDITOR`** | Read-only audit log inspection, historical snapshot verification, cryptographic digest checks. | Username: `auditor`<br>Password: `auditor_secret_pass_2026` |
+| **`EXECUTIVE`** | Executive posture monitoring, multi-dimensional KPI exploration, report creation, and protected data export. | Username: `executive`<br>Password: `executive_secret_pass_2026` |
 | **`ANALYST`** | Read-only graph navigation, search, dossier viewing, metrics exploration, view case timelines. | Username: `analyst`<br>Password: `analyst_secret_pass_2026` |
+| **`READ_ONLY`** | Minimal read-only viewer for external stakeholders. | Username: `readonly`<br>Password: `readonly_secret_pass_2026` |
 
 ---
 
@@ -234,4 +238,14 @@ python -m pytest simulator/tests/ tests/ -v
 * **Control Plane REST APIs**: 22 dedicated REST endpoints mounted under `/api/v1/control-plane/*`.
 * **Real-time WebSocket Isolation**: Tenant-scoped event envelope filtering and multi-tenant broadcast routing.
 * **Enterprise Workstations**: Control Center, Tenant Management, Policy Management, User Management, and Team Management workstations.
+
+### Master Enterprise Platform: Unified Fraud Intelligence, Decisioning & Analytics
+* **Extended Personas & Granular RBAC**: 9 enterprise roles and 31 granular permissions across all modules.
+* **Deterministic Fraud Decisioning**: Rule-based verdicts (`ALLOW`, `REVIEW`, `ESCALATE`, `BLOCK`, `CONFIRM_FRAUD`, `FALSE_POSITIVE`) with confidence scoring.
+* **Human-in-the-Loop Override Ledger**: Immutable audit trail of human decisions with mandatory rationales and evidence links.
+* **What-If Simulation Sandbox**: Safe evaluation of hypothetical thresholds and detector weights without touching production data.
+* **Enterprise Analytics Engine**: Multi-tenant Fraud, Financial, Operations, Detection, and Network KPIs with time-series trend tracking.
+* **0–100 Executive Fraud Posture**: Composite posture index with positive/negative driver attribution and statistical KPI anomaly alerts.
+* **Enterprise Reporting Center**: 8 report types, immutable SHA-256 snapshots, and CSV export formula injection protection (CWE-1236).
+* **Enterprise Workstations**: Analytics Explorer, Reporting Center, and Decisioning Sandbox pages with D3.js and Tailwind UI.
 

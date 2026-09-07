@@ -18,10 +18,15 @@ class UserStore:
     def _seed_default_users(self):
         """Initializes default role accounts with secure password hashes."""
         default_accounts = [
-            ("platform_admin", "platform_secret_pass_2026", Role.PLATFORM_ADMIN, "usr_plat_000", "GLOBAL", ["PLATFORM_ADMIN"]),
-            ("admin", "admin_secret_pass_2026", Role.ADMIN, "usr_admin_001", "tnt_default", ["TENANT_ADMIN", "USER_ADMIN", "POLICY_ADMIN"]),
-            ("investigator", "investigator_secret_pass_2026", Role.INVESTIGATOR, "usr_inv_002", "tnt_default", ["CASE_CREATE", "CASE_UPDATE", "CASE_ASSIGN", "EVIDENCE_CREATE"]),
-            ("analyst", "analyst_secret_pass_2026", Role.ANALYST, "usr_ana_003", "tnt_default", ["ALERT_READ", "CASE_READ", "EVIDENCE_READ"]),
+            ("platform_admin", "platform_admin_secret_pass_2026", Role.PLATFORM_ADMIN, "usr_plat_000", "GLOBAL", ["PLATFORM_ADMIN"]),
+            ("admin", "admin_secret_pass_2026", Role.ADMIN, "usr_admin_001", "tnt_default", ["TENANT_ADMIN", "USER_ADMIN", "POLICY_ADMIN", "USER_WRITE", "TENANT_WRITE"]),
+            ("tenant_admin", "admin_secret_pass_2026", Role.TENANT_ADMIN, "usr_tadm_008", "tnt_default", ["TENANT_ADMIN", "USER_ADMIN", "POLICY_ADMIN", "USER_WRITE", "TENANT_WRITE"]),
+            ("investigator", "investigator_secret_pass_2026", Role.INVESTIGATOR, "usr_inv_002", "tnt_default", ["CASE_CREATE", "CASE_UPDATE", "CASE_ASSIGN", "EVIDENCE_CREATE", "DECISION_CREATE"]),
+            ("analyst", "analyst_secret_pass_2026", Role.ANALYST, "usr_ana_003", "tnt_default", ["ALERT_READ", "CASE_READ", "EVIDENCE_READ", "DECISION_READ", "ANALYTICS_READ", "REPORT_READ"]),
+            ("reviewer", "reviewer_secret_pass_2026", Role.REVIEWER, "usr_rev_004", "tnt_default", ["CASE_READ", "ALERT_READ", "EVIDENCE_READ", "DECISION_READ", "DECISION_OVERRIDE"]),
+            ("auditor", "auditor_secret_pass_2026", Role.AUDITOR, "usr_aud_005", "tnt_default", ["AUDIT_READ", "CASE_READ", "ALERT_READ", "REPORT_READ"]),
+            ("executive", "executive_secret_pass_2026", Role.EXECUTIVE, "usr_exe_006", "tnt_default", ["ANALYTICS_READ", "REPORT_READ", "REPORT_CREATE", "REPORT_EXPORT", "CASE_READ", "ALERT_READ"]),
+            ("readonly", "readonly_secret_pass_2026", Role.READ_ONLY, "usr_ro_007", "tnt_default", ["ALERT_READ", "CASE_READ"]),
         ]
         for uname, pwd, role, uid, tenant, perms in default_accounts:
             user = User(
