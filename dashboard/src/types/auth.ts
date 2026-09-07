@@ -1,4 +1,14 @@
-export type Role = 'ANALYST' | 'INVESTIGATOR' | 'ADMIN';
+export enum Role {
+  PLATFORM_ADMIN = 'PLATFORM_ADMIN',
+  ADMIN = 'ADMIN',
+  TENANT_ADMIN = 'TENANT_ADMIN',
+  INVESTIGATOR = 'INVESTIGATOR',
+  ANALYST = 'ANALYST',
+  REVIEWER = 'REVIEWER',
+  AUDITOR = 'AUDITOR',
+  EXECUTIVE = 'EXECUTIVE',
+  READ_ONLY = 'READ_ONLY',
+}
 
 export interface User {
   user_id: string;

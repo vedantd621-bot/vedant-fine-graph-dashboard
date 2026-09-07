@@ -837,3 +837,5 @@ export const apiClient = {
   },
 
 };
+
+export const apiService = apiClient;

@@ -59,7 +59,7 @@ export const LoginPage: React.FC = () => {
             </label>
             <input
               type="text"
-              value;{username}
+              value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="admin / investigator / analyst"
               className="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-colors"

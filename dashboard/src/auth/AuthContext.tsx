@@ -35,8 +35,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const storedToken = localStorage.getItem(TOKEN_KEY);
       if (storedToken) {
         try {
-          const res = await axios.get(${apiBase}/api/v1/auth/me, {
-            headers: { Authorization: Bearer  }
+          const res = await axios.get(`${apiBase}/api/v1/auth/me`, {
+            headers: { Authorization: `Bearer ${storedToken}` }
           });
           setUser(res.data);
           localStorage.setItem(USER_KEY, JSON.stringify(res.data));
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [apiBase]);
 
   const login = async (credentials: LoginCredentials) => {
-    const res = await axios.post<LoginResponse>(${apiBase}/api/v1/auth/login, credentials);
+    const res = await axios.post<LoginResponse>(`${apiBase}/api/v1/auth/login`, credentials);
     const { access_token, user: loggedInUser } = res.data;
     setToken(access_token);
     setUser(loggedInUser);
