@@ -21,13 +21,14 @@ export const AnalyticsExplorerPage: React.FC = () => {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const apiBase = (process.env.REACT_APP_API_BASE_URL) || 'http://localhost:8000';
+      const token = localStorage.getItem('fingraph_token') || localStorage.getItem('token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
       const [kpiRes, trendRes] = await Promise.all([
-        fetch('/api/v1/analytics/kpis', { headers }),
-        fetch(`/api/v1/analytics/trends?window=${activeWindow}&periods=14`, { headers }),
+        fetch(`${apiBase}/api/v1/analytics/kpis`, { headers }),
+        fetch(`${apiBase}/api/v1/analytics/trends?window=${activeWindow}&periods=14`, { headers }),
       ]);
 
       if (kpiRes.ok) {

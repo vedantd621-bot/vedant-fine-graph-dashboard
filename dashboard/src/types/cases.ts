@@ -1,4 +1,4 @@
-﻿export type CaseStatus = 'OPEN' | 'IN_PROGRESS' | 'ESCALATED' | 'RESOLVED' | 'CLOSED';
+export type CaseStatus = 'OPEN' | 'IN_PROGRESS' | 'ESCALATED' | 'RESOLVED' | 'CLOSED';
 export type CasePriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type EvidenceType = 'TRANSACTION' | 'ACCOUNT' | 'GRAPH_PATH' | 'DETECTOR_RESULT' | 'NOTE' | 'RISK_FACTOR' | 'EXTERNAL';
 
@@ -71,4 +71,12 @@ export interface CaseUpdateRequest {
   description?: string;
   priority?: CasePriority;
   status?: CaseStatus;
+}
+
+export interface CaseListResponse {
+  data: InvestigationCase[];
+  total_items: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
 }

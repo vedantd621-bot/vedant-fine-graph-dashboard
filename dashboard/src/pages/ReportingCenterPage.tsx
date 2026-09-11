@@ -30,14 +30,16 @@ export const ReportingCenterPage: React.FC = () => {
   const [selectedType, setSelectedType] = useState<ReportType>('EXECUTIVE_FRAUD_REPORT');
   const [format, setFormat] = useState<ReportFormat>('JSON');
 
+  const apiBase = (process.env.REACT_APP_API_BASE_URL) || 'http://localhost:8000';
+
   const fetchSnapshots = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('fingraph_token') || localStorage.getItem('token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('/api/v1/reports/', { headers });
+      const res = await fetch(`${apiBase}/api/v1/reports/`, { headers });
       if (res.ok) {
         const data = await res.json();
         setSnapshots(data);
@@ -56,11 +58,11 @@ export const ReportingCenterPage: React.FC = () => {
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('fingraph_token') || localStorage.getItem('token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('/api/v1/reports/', {
+      const res = await fetch(`${apiBase}/api/v1/reports/`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ report_type: selectedType, format }),

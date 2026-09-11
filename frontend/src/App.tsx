@@ -32,6 +32,7 @@ import { ThreatPropagationPage } from './pages/ThreatPropagationPage';
 import { InvestigationIntelligencePage } from './pages/InvestigationIntelligencePage';
 import { AlertCorrelationPage } from './pages/AlertCorrelationPage';
 import { TaskManagementPage } from './pages/TaskManagementPage';
+import { TransactionInvestigationDetailPage } from './pages/TransactionInvestigationDetailPage';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { LoginPage } from './auth/LoginPage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
@@ -40,12 +41,13 @@ import { AlertToast } from './components/realtime/AlertToast';
 
 export const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>('command-center');
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>('CMP-2026-001');
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>('TX-892410-FRD');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   if (isLoading) {
@@ -88,6 +90,11 @@ export const AppContent: React.FC = () => {
     setActiveTab('cases');
   };
 
+  const handleSelectTransaction = (transactionId: string) => {
+    setSelectedTransactionId(transactionId);
+    setActiveTab('transaction-detail');
+  };
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setActiveTab('investigation');
@@ -124,12 +131,53 @@ export const AppContent: React.FC = () => {
           />
 
           <main className="flex-1 p-6 overflow-y-auto max-w-7xl mx-auto w-full">
+            {/* 6 PRIMARY CORE MODULES */}
+            {activeTab === 'dashboard' && (
+              <DashboardPage
+                onSelectAccount={handleSelectAccount}
+                onSelectAlert={handleSelectAlert}
+                onNavigate={setActiveTab}
+              />
+            )}
+
+            {activeTab === 'investigation' && (
+              <InvestigationPage
+                onSelectAccount={handleSelectAccount}
+                onSelectAlert={handleSelectAlert}
+                initialQuery={searchQuery}
+              />
+            )}
+
+            {activeTab === 'networks' && (
+              <FraudNetworksPage
+                onSelectNetwork={handleSelectNetwork}
+                onSelectAccount={handleSelectAccount}
+              />
+            )}
+
+            {activeTab === 'alerts' && (
+              <AlertsPage onSelectAlert={handleSelectAlert} />
+            )}
+
+            {activeTab === 'analytics-explorer' && <AnalyticsExplorerPage />}
+
+            {activeTab === 'transaction-detail' && (
+              <TransactionInvestigationDetailPage
+                transactionId={selectedTransactionId || 'TX-892410-FRD'}
+                onBack={() => setActiveTab('dashboard')}
+                onSelectAccount={handleSelectAccount}
+                onSelectAlert={handleSelectAlert}
+                onSelectCase={handleSelectCase}
+                onSelectNetwork={handleSelectNetwork}
+              />
+            )}
+
+            {/* SECONDARY / ADVANCED ENTERPRISE SUITE */}
             {activeTab === 'control-center' && <EnterpriseControlCenterPage />}
             {activeTab === 'tenants' && <TenantManagementPage />}
             {activeTab === 'policies' && <PolicyManagementPage />}
             {activeTab === 'user-management' && <UserManagementPage />}
             {activeTab === 'team-management' && <TeamManagementPage />}
-            {activeTab === 'analytics-explorer' && <AnalyticsExplorerPage />}
             {activeTab === 'reporting-center' && <ReportingCenterPage />}
             {activeTab === 'decisioning-sandbox' && <DecisioningSandboxPage />}
 
@@ -141,19 +189,12 @@ export const AppContent: React.FC = () => {
             )}
 
             {activeTab === 'early-warnings' && <EarlyWarningPage />}
-
             {activeTab === 'network-evolution' && <NetworkEvolutionPage />}
-
             {activeTab === 'pattern-intelligence' && <PatternIntelligencePage />}
-
             {activeTab === 'adaptive-intelligence' && <AdaptiveIntelligencePage />}
-
             {activeTab === 'threat-propagation' && <ThreatPropagationPage />}
-
             {activeTab === 'investigation-intelligence' && <InvestigationIntelligencePage />}
-
             {activeTab === 'alert-correlation' && <AlertCorrelationPage />}
-
             {activeTab === 'task-management' && <TaskManagementPage />}
 
             {activeTab === 'campaign-detail' && selectedCampaignId && (
@@ -166,14 +207,6 @@ export const AppContent: React.FC = () => {
 
             {activeTab === 'case-intelligence' && (
               <CaseIntelligencePage onSelectCase={handleSelectCase} />
-            )}
-
-            {activeTab === 'dashboard' && (
-              <DashboardPage
-                onSelectAccount={handleSelectAccount}
-                onSelectAlert={handleSelectAlert}
-                onNavigate={setActiveTab}
-              />
             )}
 
             {activeTab === 'operations' && (
@@ -195,20 +228,12 @@ export const AppContent: React.FC = () => {
               />
             )}
 
-            {activeTab === 'alerts' && (
-              <AlertsPage onSelectAlert={handleSelectAlert} />
-            )}
-
             {activeTab === 'alert-detail' && selectedAlertId && (
               <AlertDetailPage
                 alertId={selectedAlertId}
                 onBack={() => setActiveTab('alerts')}
                 onSelectAccount={handleSelectAccount}
               />
-            )}
-
-            {activeTab === 'networks' && (
-              <FraudNetworksPage onSelectNetwork={handleSelectNetwork} />
             )}
 
             {activeTab === 'network-detail' && selectedNetworkId && (
@@ -235,14 +260,6 @@ export const AppContent: React.FC = () => {
               <CasesPage
                 onSelectAccount={handleSelectAccount}
                 onSelectAlert={handleSelectAlert}
-              />
-            )}
-
-            {activeTab === 'investigation' && (
-              <InvestigationPage
-                onSelectAccount={handleSelectAccount}
-                onSelectAlert={handleSelectAlert}
-                initialQuery={searchQuery}
               />
             )}
           </main>

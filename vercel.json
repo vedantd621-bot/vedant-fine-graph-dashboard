@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "installCommand": "cd dashboard && npm install",
+  "buildCommand": "cd dashboard && npm run build",
+  "outputDirectory": "dashboard/build",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

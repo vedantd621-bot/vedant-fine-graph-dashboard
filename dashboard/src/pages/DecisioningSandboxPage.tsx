@@ -24,13 +24,15 @@ export const DecisioningSandboxPage: React.FC = () => {
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [simulating, setSimulating] = useState(false);
 
+  const apiBase = (process.env.REACT_APP_API_BASE_URL) || 'http://localhost:8000';
+
   const fetchDecisions = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('fingraph_token') || localStorage.getItem('token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('/api/v1/decisioning/?limit=20', { headers });
+      const res = await fetch(`${apiBase}/api/v1/decisioning/?limit=20`, { headers });
       if (res.ok) {
         const data = await res.json();
         setDecisions(data);
@@ -50,11 +52,11 @@ export const DecisioningSandboxPage: React.FC = () => {
   const handleApplyOverride = async () => {
     if (!selectedDecision || !overrideReason) return;
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('fingraph_token') || localStorage.getItem('token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch(`/api/v1/decisioning/${selectedDecision.decision_id}/override`, {
+      const res = await fetch(`${apiBase}/api/v1/decisioning/${selectedDecision.decision_id}/override`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -76,11 +78,11 @@ export const DecisioningSandboxPage: React.FC = () => {
   const handleRunSimulation = async () => {
     setSimulating(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('fingraph_token') || localStorage.getItem('token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('/api/v1/decisioning/simulate', {
+      const res = await fetch(`${apiBase}/api/v1/decisioning/simulate`, {
         method: 'POST',
         headers,
         body: JSON.stringify({

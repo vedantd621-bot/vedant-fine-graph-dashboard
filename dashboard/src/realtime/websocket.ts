@@ -20,11 +20,21 @@ export class FinGraphWebSocketClient {
     if (customUrl) {
       this.url = customUrl;
     } else {
-      const apiBase =
-        (typeof process !== 'undefined' && process.env?.REACT_APP_API_BASE_URL) ||
-        (typeof window !== 'undefined' && (window as any).__ENV__?.REACT_APP_API_BASE_URL) ||
-        'http://localhost:8000';
+      const getApiBase = (): string => {
+        if (typeof process !== 'undefined' && process.env?.REACT_APP_API_BASE_URL) {
+          return process.env.REACT_APP_API_BASE_URL;
+        }
+        if (typeof window !== 'undefined' && (window as any).__ENV__?.REACT_APP_API_BASE_URL) {
+          return (window as any).__ENV__.REACT_APP_API_BASE_URL;
+        }
+        if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+          const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+          return `${protocol}//${window.location.hostname}:8000`;
+        }
+        return 'http://127.0.0.1:8000';
+      };
 
+      const apiBase = getApiBase();
       const wsProtocol = apiBase.startsWith('https') ? 'wss:' : 'ws:';
       const hostPart = apiBase.replace(/^https?:\/\//, '');
       this.url = `${wsProtocol}//${hostPart}/api/v1/ws`;

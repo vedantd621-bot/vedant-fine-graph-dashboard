@@ -42,10 +42,21 @@ import {
   SearchResults,
 } from '../types';
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL ||
-  (window as any).__ENV__?.REACT_APP_API_BASE_URL ||
-  'http://localhost:8000';
+export const getApiBaseUrl = (): string => {
+  if (process.env.REACT_APP_API_BASE_URL) {
+    return process.env.REACT_APP_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined' && (window as any).__ENV__?.REACT_APP_API_BASE_URL) {
+    return (window as any).__ENV__.REACT_APP_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    return `${protocol}//${window.location.hostname}:8000`;
+  }
+  return 'http://127.0.0.1:8000';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -54,8 +65,11 @@ const api = axios.create({
   },
 });
 
-// Request interceptor: attach JWT token if stored
+// Request interceptor: attach dynamic baseURL and JWT token if stored
 api.interceptors.request.use((config) => {
+  if (!config.baseURL || config.baseURL === 'http://localhost:8000' || config.baseURL === 'http://127.0.0.1:8000') {
+    config.baseURL = getApiBaseUrl();
+  }
   const token = localStorage.getItem('fingraph_token');
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -68,9 +82,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      const hadToken = !!localStorage.getItem('fingraph_token');
       localStorage.removeItem('fingraph_token');
       localStorage.removeItem('fingraph_user');
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('login')) {
+      if (hadToken && typeof window !== 'undefined' && !window.location.pathname.includes('login')) {
         window.location.reload();
       }
     }

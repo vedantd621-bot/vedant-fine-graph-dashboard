@@ -36,9 +36,17 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         if not cfg.rate_limit_enabled:
             return await call_next(request)
 
-        # Rate limit applies to API paths, skipping metrics/health probes
+        # Rate limit applies to API paths, skipping metrics, health probes, and documentation schemas
         path = request.url.path
-        if path.startswith("/health") or path.startswith("/live") or path.startswith("/ready") or path == "/metrics":
+        if (
+            path.startswith("/health")
+            or path.startswith("/live")
+            or path.startswith("/ready")
+            or path == "/metrics"
+            or path == "/openapi.json"
+            or path.startswith("/docs")
+            or path.startswith("/redoc")
+        ):
             return await call_next(request)
 
         client_ip = request.client.host if request.client else "127.0.0.1"

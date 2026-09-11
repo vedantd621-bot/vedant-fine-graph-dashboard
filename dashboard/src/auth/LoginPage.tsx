@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Shield, AlertCircle } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
 export const LoginPage: React.FC = () => {
@@ -19,7 +20,7 @@ export const LoginPage: React.FC = () => {
     try {
       await login({ username, password });
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'invalid username or password.');
+      setError(err.response?.data?.error?.message || 'Invalid username or password.');
     } finally {
       setLoading(false);
     }
@@ -31,11 +32,11 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-955 text-slate-100 flex items-center justify-center p-4 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6">
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 shadow-lg shadow-cyan-500/20 text-white text-2xl font-bold mb-2">
-            🊘
+            <Shield className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-cyan-400 to-indigo-300 bg-clip-text text-transparent">
             FinGraph Intelligence
@@ -45,14 +46,14 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
 
-        {true && error && (
+        {error && (
           <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm flex items-center gap-2">
-            <span>‘</span>
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={true && handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
               Username
@@ -98,21 +99,21 @@ export const LoginPage: React.FC = () => {
               onClick={() => handleQuickLogin('admin', 'admin_secret_pass_2026')}
               className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 hover:bg-rose-500/20 text-xs font-medium transition-colors"
             >
-              🐏 Admin
+              Admin
             </button>
             <button
               type="button"
               onClick={() => handleQuickLogin('investigator', 'investigator_secret_pass_2026')}
               className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20 text-xs font-medium transition-colors"
             >
-              🔍 Investigator
+              Investigator
             </button>
             <button
               type="button"
               onClick={() => handleQuickLogin('analyst', 'analyst_secret_pass_2026')}
               className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 text-xs font-medium transition-colors"
             >
-              📊 Analyst
+              Analyst
             </button>
           </div>
         </div>
