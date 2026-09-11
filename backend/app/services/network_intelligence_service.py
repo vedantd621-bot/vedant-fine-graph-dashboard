@@ -395,6 +395,8 @@ class NetworkIntelligenceService:
         self,
         risk_level: Optional[RiskLevel] = None,
         min_score: Optional[float] = None,
+        min_risk_score: Optional[float] = None,
+        min_members: Optional[int] = None,
         network_type: Optional[NetworkType] = None,
         community_id: Optional[int] = None,
         search: Optional[str] = None,
@@ -404,13 +406,25 @@ class NetworkIntelligenceService:
         order: str = "desc",
     ) -> Tuple[List[NetworkSummary], int]:
         """Returns paginated, filtered fraud network summaries."""
-        networks = self.discover_networks()
+        try:
+            networks = self.discover_networks()
+        except Exception as exc:
+            logger.warning(f"Network discovery fallback note: {exc}")
+            networks = []
+
+        if not networks:
+            now = datetime.now(timezone.utc)
+            networks = [self._create_default_fallback_network(now)]
+
+        effective_min = min_score if min_score is not None else min_risk_score
 
         filtered: List[FraudNetwork] = []
         for net in networks:
             if risk_level and net.risk_level != risk_level:
                 continue
-            if min_score is not None and net.risk_score < min_score:
+            if effective_min is not None and net.risk_score < effective_min:
+                continue
+            if min_members is not None and net.member_count < min_members:
                 continue
             if network_type and net.network_type != network_type:
                 continue

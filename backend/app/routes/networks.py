@@ -26,6 +26,7 @@ from backend.app.models.networks import (
     NetworkSummary,
     NetworkType,
 )
+from backend.app.models.common import PaginationMeta
 from backend.app.security.dependencies import require_analyst, require_investigator
 from backend.app.security.models import User
 from backend.app.services.graph_service import GraphService
@@ -49,7 +50,7 @@ def list_networks(
     service: NetworkIntelligenceService = Depends(get_network_intelligence_service),
 ):
     """Retrieves paginated list of discovered fraud networks with multi-criteria filtering."""
-    return service.list_networks(
+    summaries, total_items = service.list_networks(
         network_type=network_type,
         min_risk_score=min_risk_score,
         risk_level=risk_level,
@@ -57,6 +58,18 @@ def list_networks(
         search=search,
         page=page,
         page_size=page_size,
+    )
+    total_pages = (total_items + page_size - 1) // page_size if page_size > 0 else 1
+    return NetworkListResponse(
+        data=summaries,
+        pagination=PaginationMeta(
+            page=page,
+            page_size=page_size,
+            total_items=total_items,
+            total_pages=total_pages,
+            has_next=page < total_pages,
+            has_prev=page > 1,
+        ),
     )
 
 
