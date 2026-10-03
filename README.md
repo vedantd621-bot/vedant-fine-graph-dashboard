@@ -1,4 +1,4 @@
-# FinGraph (v1.0.0 Production Release)
+# FinGraph — Real-Time Fraud Syndicate Analytics
 
 > Enterprise Real-Time Fraud Intelligence, Graph Analytics & Autonomous Operations Platform.
 
@@ -248,4 +248,3 @@ python -m pytest simulator/tests/ tests/ -v
 * **0–100 Executive Fraud Posture**: Composite posture index with positive/negative driver attribution and statistical KPI anomaly alerts.
 * **Enterprise Reporting Center**: 8 report types, immutable SHA-256 snapshots, and CSV export formula injection protection (CWE-1236).
 * **Enterprise Workstations**: Analytics Explorer, Reporting Center, and Decisioning Sandbox pages with D3.js and Tailwind UI.
-
