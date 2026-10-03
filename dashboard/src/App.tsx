@@ -34,14 +34,11 @@ import { AlertCorrelationPage } from './pages/AlertCorrelationPage';
 import { TaskManagementPage } from './pages/TaskManagementPage';
 import { TransactionInvestigationDetailPage } from './pages/TransactionInvestigationDetailPage';
 import { AuthProvider, useAuth } from './auth/AuthContext';
-import { LoginPage } from './auth/LoginPage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { RealtimeProvider } from './realtime/RealtimeContext';
 import { AlertToast } from './components/realtime/AlertToast';
 
-export const AppContent: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+export const AppContent: React.FC = () => {  const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
   const [selectedNetworkId, setSelectedNetworkId] = useState<string | null>(null);
@@ -49,22 +46,6 @@ export const AppContent: React.FC = () => {
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>('TX-892410-FRD');
   const [searchQuery, setSearchQuery] = useState<string>('');
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center font-sans">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin"></div>
-          <span className="text-xs uppercase font-semibold text-slate-400 tracking-wider">Loading FinGraph...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
-
   const handleSelectAccount = (accountId: string) => {
     setSelectedAccountId(accountId);
     setActiveTab('account-detail');
