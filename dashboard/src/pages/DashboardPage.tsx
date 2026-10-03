@@ -30,6 +30,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [recentAlerts, setRecentAlerts] = useState<AlertSummary[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,8 +47,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         setTopAccounts(topAccRes || []);
         setRecentAlerts(alertRes?.data || []);
         setError(null);
+        setIsDemoMode(false);
       } catch (err: any) {
         console.warn('Dashboard network request fallback activated:', err);
+        setIsDemoMode(true);
         // Resilient fallback dataset: guarantees dashboard displays rich analytics even if backend/network drops
         setSummary({
           total_accounts: 1240,
@@ -245,6 +248,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   return (
     <div className="space-y-6">
+      {isDemoMode && (
+        <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between text-xs text-cyan-300 shadow-sm shadow-cyan-500/5">
+          <div className="flex items-center gap-2.5 font-medium">
+            <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-bold border border-cyan-500/40 text-[10px] tracking-wider uppercase">
+              DEMO MODE
+            </span>
+            <span>FinGraph is running in demonstration mode using synthetic transaction data.</span>
+          </div>
+          <span className="text-[11px] text-slate-400 hidden sm:inline">Synthetic Environment</span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-100">

@@ -19,6 +19,8 @@ export interface User {
   is_active: boolean;
 }
 
+export interface UserResponse extends User {}
+
 export interface LoginCredentials {
   username: string;
   password: string;
