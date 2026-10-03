@@ -380,3 +380,15 @@ export * from './operations';
 export * from './notifications';
 
 export * from './tenancy';
+
+export * from './orchestration';
+export * from './advanced_intelligence';
+export * from './autonomous_intelligence';
+export * from './behavior';
+export * from './cases';
+export * from './case_intelligence';
+export * from './enterprise';
+export * from './features';
+export * from './networks';
+export * from './realtime';
+export * from './auth';
